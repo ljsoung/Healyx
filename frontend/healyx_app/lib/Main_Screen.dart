@@ -42,7 +42,7 @@ class MainScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Image.asset(
-                            'assets/images/healyx_logo.png',
+                            'assets/images/healyx_logo2.png',
                             width: 35,
                             height: 35,
                             fit: BoxFit.contain,
