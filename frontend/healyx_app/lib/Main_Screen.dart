@@ -25,7 +25,6 @@ class MainScreen extends StatelessWidget {
               color: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     onPressed: () {
@@ -35,6 +34,31 @@ class MainScreen extends StatelessWidget {
                       Icons.menu,
                       color: Colors.black87,
                       size: 24,
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/healyx_logo.png',
+                            width: 35,
+                            height: 35,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'HEALYX',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF4E7CFF),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   IconButton(
