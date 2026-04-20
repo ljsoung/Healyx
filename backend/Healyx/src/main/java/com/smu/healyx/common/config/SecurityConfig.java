@@ -24,6 +24,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/translations/**").permitAll()
                 // 이메일 인증 (회원가입·아이디 찾기·비밀번호 재설정)
                 .requestMatchers("/api/email/**").permitAll()
+                // FCM 테스트
+                .requestMatchers("/api/fcm/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 그 외는 인증 필요
