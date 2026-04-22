@@ -18,8 +18,6 @@ class _ChooseLanguageScreenState extends State<ChooseLanguageScreen> {
     {'flag': '🇯🇵', 'title': '日本語'},
     {'flag': '🇻🇳', 'title': 'Tiếng Việt'},
     {'flag': '🇹🇭', 'title': 'ไทย'},
-    {'flag': '🇵🇭', 'title': 'Filipino'},
-    {'flag': '🇺🇿', 'title': 'O‘zbek'},
   ];
 
   void onSelectLanguage() {
