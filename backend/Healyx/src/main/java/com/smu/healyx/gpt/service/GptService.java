@@ -38,6 +38,27 @@ public class GptService {
             18:재활의학과, 20:가정의학과, 21:응급의학과, 24:치과
             """;
 
+    /** OpenAI Chat Completions API를 직접 호출합니다. Agent 등 공용 호출에 사용합니다. */
+    public GptChatResponse callChatCompletion(GptChatRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(gptApiKey);
+
+        HttpEntity<GptChatRequest> entity = new HttpEntity<>(request, headers);
+        try {
+            GptChatResponse response = restTemplate.postForObject(GPT_URL, entity, GptChatResponse.class);
+            if (response == null) {
+                throw new ExternalApiException("GPT_EMPTY_RESPONSE", "GPT 응답이 비어 있습니다. 다시 시도해 주세요.");
+            }
+            return response;
+        } catch (ExternalApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("GPT API 호출 실패: {}", e.getMessage());
+            throw new ExternalApiException("GPT_API_ERROR", "AI 서비스에 일시적으로 접근할 수 없습니다. 다시 시도해 주세요.");
+        }
+    }
+
     /**
      * 증상 텍스트를 분석하여 HIRA 진료과목 코드(dgsbjtCd)를 추출합니다.
      * 입력 언어 제한 없음 (8개 언어 모두 지원).
@@ -68,28 +89,13 @@ public class GptService {
                 0.0
         );
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(gptApiKey);
+        GptChatResponse response = callChatCompletion(request);
 
-        HttpEntity<GptChatRequest> entity = new HttpEntity<>(request, headers);
-
-        try {
-            GptChatResponse response = restTemplate.postForObject(
-                    GPT_URL, entity, GptChatResponse.class);
-
-            if (response == null || response.getFirstContent() == null) {
-                throw new ExternalApiException("GPT_EMPTY_RESPONSE", "증상 분석 결과를 받지 못했습니다. 다시 시도해 주세요.");
-            }
-
-            return parseGptResult(response.getFirstContent());
-
-        } catch (ExternalApiException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("GPT API 호출 실패: {}", e.getMessage());
-            throw new ExternalApiException("GPT_API_ERROR", "증상 분석 서비스에 일시적으로 접근할 수 없습니다. 다시 시도해 주세요.");
+        if (response.getFirstContent() == null) {
+            throw new ExternalApiException("GPT_EMPTY_RESPONSE", "증상 분석 결과를 받지 못했습니다. 다시 시도해 주세요.");
         }
+
+        return parseGptResult(response.getFirstContent());
     }
 
     /** GPT 응답 JSON에서 dgsbjtCd와 departmentName을 추출합니다. */

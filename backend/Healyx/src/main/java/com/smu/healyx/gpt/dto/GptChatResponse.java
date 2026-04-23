@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/** OpenAI Chat Completions API 응답 DTO */
+/** OpenAI Chat Completions API 응답 DTO (Function Calling 지원) */
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -31,13 +31,27 @@ public class GptChatResponse {
     public static class Message {
         private String role;
         private String content;
+
+        @JsonProperty("tool_calls")
+        private List<GptToolCall> toolCalls;
     }
 
-    /** 첫 번째 응답 텍스트 반환 */
     public String getFirstContent() {
         if (choices == null || choices.isEmpty()) return null;
         Choice choice = choices.get(0);
         if (choice.getMessage() == null) return null;
         return choice.getMessage().getContent();
+    }
+
+    public String getFinishReason() {
+        if (choices == null || choices.isEmpty()) return null;
+        return choices.get(0).getFinishReason();
+    }
+
+    public List<GptToolCall> getToolCalls() {
+        if (choices == null || choices.isEmpty()) return null;
+        Choice choice = choices.get(0);
+        if (choice.getMessage() == null) return null;
+        return choice.getMessage().getToolCalls();
     }
 }

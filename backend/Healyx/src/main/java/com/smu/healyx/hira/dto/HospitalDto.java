@@ -19,11 +19,14 @@ public class HospitalDto {
     /** 전화번호 */
     private String telephone;
 
-    /** 경도 — 지도 렌더링은 Flutter가 전담, 서버는 좌표만 전달 */
-    private String longitude;
+    /** 경도 — 지도 렌더링은 Flutter가 전담, 서버는 좌표만 전달. 소수점 15자리 정밀도 */
+    private double longitude;
 
-    /** 위도 */
-    private String latitude;
+    /** 위도 — 소수점 15자리 정밀도 */
+    private double latitude;
+
+    /** 검색 위치 기준 거리 (m) — 위치 기반 검색 시에만 유효, 병원 추천 스코어링에 사용 */
+    private int distance;
 
     /** 종별코드명 (예: 의원, 병원, 종합병원) */
     private String hospitalType;

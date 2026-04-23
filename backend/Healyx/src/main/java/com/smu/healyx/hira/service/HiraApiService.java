@@ -68,13 +68,13 @@ public class HiraApiService {
         if (StringUtils.hasText(request.getClCd())) {
             sb.append("&clCd=").append(request.getClCd());
         }
-        if (StringUtils.hasText(request.getXPos())) {
+        if (request.getXPos() != 0.0) {
             sb.append("&xPos=").append(request.getXPos());
         }
-        if (StringUtils.hasText(request.getYPos())) {
+        if (request.getYPos() != 0.0) {
             sb.append("&yPos=").append(request.getYPos());
         }
-        if (StringUtils.hasText(request.getRadius())) {
+        if (request.getRadius() > 0) {
             sb.append("&radius=").append(request.getRadius());
         }
 
@@ -135,6 +135,7 @@ public class HiraApiService {
                 .telephone(item.getTelno())
                 .longitude(item.getLongitude())
                 .latitude(item.getLatitude())
+                .distance((int) Math.round(item.getDistance()))
                 .hospitalType(item.getClCdNm())
                 .foreignCertified(false) // DB 연동 완료 후 foreign_certified_hospital 테이블에서 조회
                 .build();

@@ -20,14 +20,14 @@ public class HospitalSearchRequest {
      * */
     private String clCd;
 
-    /** 경도 — 클라이언트 현재 위치 (Flutter GPS) */
-    private String xPos;
+    /** 경도 — 클라이언트 현재 위치 (Flutter GPS), 소수점 15자리 정밀도 */
+    private double xPos;
 
-    /** 위도 — 클라이언트 현재 위치 (Flutter GPS) */
-    private String yPos;
+    /** 위도 — 클라이언트 현재 위치 (Flutter GPS), 소수점 15자리 정밀도 */
+    private double yPos;
 
-    /** 검색 반경 (단위: km, 위험도에 따른 반경 나누어 기입) */
-    private String radius;
+    /** 검색 반경 (단위: m, 위험도에 따른 반경 나누어 기입) */
+    private int radius;
 
     /** 페이지 번호 (기본 1) */
     private int pageNo = 1;
