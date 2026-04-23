@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'find_id_screen.dart';
 import 'find_password_screen.dart';
-import 'sign_up_screen.dart';
-import 'Login_Screen.dart';
+import '../login_signup_screen/sign_up_screen.dart';
+import '../login_signup_screen/login_screen.dart';
 
 class FindPasswordSuccessScreen extends StatelessWidget {
   const FindPasswordSuccessScreen({super.key});

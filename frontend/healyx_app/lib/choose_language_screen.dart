@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Main_Screen.dart';
+import 'main_screen.dart';
 
 class ChooseLanguageScreen extends StatefulWidget {
   const ChooseLanguageScreen({super.key});
