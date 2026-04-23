@@ -25,14 +25,18 @@ public class HiraItem {
     /** 전화번호 */
     private String telno;
 
-    /** 경도 (XPos) */
+    /** 경도 (XPos) — 소수점 15자리 정밀도 */
     @JsonProperty("XPos")
-    private String longitude;
+    private double longitude;
 
-    /** 위도 (YPos) */
+    /** 위도 (YPos) — 소수점 15자리 정밀도 */
     @JsonProperty("YPos")
-    private String latitude;
-    
+    private double latitude;
+
+    /** 검색 위치 기준 거리 — HIRA API가 소수점 문자열로 반환하므로 double로 파싱 */
+    @JsonProperty("distance")
+    private double distance;
+
     /** 종별코드 */
     private String clCd;
 
