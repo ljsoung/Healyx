@@ -1,7 +1,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'Choose_Language_Screen.dart';
+import 'choose_language_screen.dart';
 
 class InitialScreen extends StatefulWidget {
   const InitialScreen({super.key});

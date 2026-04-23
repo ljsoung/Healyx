@@ -1,30 +1,35 @@
-// 변경할 비밀번호 입력 화면
 import 'package:flutter/material.dart';
 import 'find_id_screen.dart';
-import 'find_password_screen.dart';
-import 'sign_up_screen.dart';
-import 'find_password_success_screen.dart';
+import '../login_signup_screen/sign_up_screen.dart';
+import 'find_password_reset_screen.dart';
 
-class FindPasswordResetScreen extends StatefulWidget {
-  const FindPasswordResetScreen({super.key});
+class FindPasswordScreen extends StatefulWidget {
+  const FindPasswordScreen({super.key});
 
   @override
-  State<FindPasswordResetScreen> createState() =>
-      _FindPasswordResetScreenState();
+  State<FindPasswordScreen> createState() => _FindPasswordScreenState();
 }
 
-class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-  TextEditingController();
+class _FindPasswordScreenState extends State<FindPasswordScreen> {
+  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
 
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
+  bool get _isEmailEntered => _emailController.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(() {
+      setState(() {});
+    });
+  }
 
   @override
   void dispose() {
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
+    _idController.dispose();
+    _emailController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -35,13 +40,6 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
     );
   }
 
-  void _goToFindPasswordScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const FindPasswordScreen()),
-    );
-  }
-
   void _goToSignUpScreen() {
     Navigator.push(
       context,
@@ -49,11 +47,19 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
     );
   }
 
-  void _onConfirm() {
+  void _requestVerification() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('인증요청이 전송되었습니다.'),
+      ),
+    );
+  }
+
+  void _confirmAction() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const FindPasswordSuccessScreen(),
+        builder: (context) => const FindPasswordResetScreen(),
       ),
     );
   }
@@ -61,14 +67,12 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
   @override
   Widget build(BuildContext context) {
     const Color primaryBlue = Color(0xFF2F64F5);
-    const Color subBlue = Color(0xFF6A8AF7);
-    const Color lightBlue = Color(0xFFEDF2FF);
-    const Color hintBlue = Color(0xFF8EA6F3);
     const Color buttonBlue = Color(0xFF2260FF);
     const Color borderBlue = Color(0xFFD6E0FF);
+    const Color backgroundColor = Colors.white;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -83,7 +87,9 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                     Row(
                       children: [
                         IconButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                           icon: const Icon(
                             Icons.arrow_back_ios_new,
                             color: primaryBlue,
@@ -108,26 +114,25 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 34),
+                    const SizedBox(height: 26),
 
                     const Center(
                       child: Column(
                         children: [
                           Text(
-                            'STEP 2. 새로운 비밀번호 설정',
+                            'STEP 1. 본인 인증',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: subBlue,
+                              color: Color(0xFF6A8AF7),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 6),
                           Text(
-                            '안전한 계정 보호를 위해 새로운 비밀번호를 설정합니다',
+                            '안전한 비밀번호 변경을 위해 본인 확인이 필요합니다.',
                             style: TextStyle(
                               fontSize: 14,
-                              color: subBlue,
+                              color: Color(0xFF6A8AF7),
                               fontWeight: FontWeight.w600,
                             ),
                             textAlign: TextAlign.center,
@@ -136,10 +141,10 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 46),
+                    const SizedBox(height: 44),
 
                     const Text(
-                      '새로운 비밀번호',
+                      '아이디',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -147,33 +152,15 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-
-                    _buildPasswordField(
-                      controller: _newPasswordController,
-                      hintText: '새 비밀번호 입력',
-                      obscureText: _obscureNewPassword,
-                      onToggleVisibility: () {
-                        setState(() {
-                          _obscureNewPassword = !_obscureNewPassword;
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    const Text(
-                      '영문, 숫자, 특수문자(!@#+=)를 포함해주세요.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: subBlue,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    _buildInputField(
+                      controller: _idController,
+                      hintText: '아이디를 입력하세요',
                     ),
 
                     const SizedBox(height: 28),
 
                     const Text(
-                      '새로운 비밀번호 확인',
+                      '이메일',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -181,17 +168,28 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
+                    _buildEmailWithButtonField(
+                      controller: _emailController,
+                      hintText: '이메일을 입력하세요',
+                      buttonText: '인증요청',
+                      enabled: _isEmailEntered,
+                      onPressed: _isEmailEntered ? _requestVerification : null,
+                    ),
 
-                    _buildPasswordField(
-                      controller: _confirmPasswordController,
-                      hintText: '새 비밀번호 확인',
-                      obscureText: _obscureConfirmPassword,
-                      onToggleVisibility: () {
-                        setState(() {
-                          _obscureConfirmPassword =
-                          !_obscureConfirmPassword;
-                        });
-                      },
+                    const SizedBox(height: 28),
+
+                    const Text(
+                      '인증번호',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInputField(
+                      controller: _codeController,
+                      hintText: '인증번호를 입력하세요',
                     ),
 
                     const SizedBox(height: 34),
@@ -200,7 +198,7 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: _onConfirm,
+                        onPressed: _confirmAction,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonBlue,
                           elevation: 0,
@@ -266,7 +264,7 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: _goToFindPasswordScreen,
+                        onPressed: () {},
                         style: TextButton.styleFrom(
                           minimumSize: Size.zero,
                           padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -336,11 +334,9 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
     );
   }
 
-  Widget _buildPasswordField({
+  Widget _buildInputField({
     required TextEditingController controller,
     required String hintText,
-    required bool obscureText,
-    required VoidCallback onToggleVisibility,
   }) {
     return Container(
       height: 54,
@@ -350,7 +346,6 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: obscureText,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
@@ -359,14 +354,68 @@ class _FindPasswordResetScreenState extends State<FindPasswordResetScreen> {
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          suffixIcon: IconButton(
-            onPressed: onToggleVisibility,
-            icon: Icon(
-              obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: const Color(0xFF8EA6F3),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailWithButtonField({
+    required TextEditingController controller,
+    required String hintText,
+    required String buttonText,
+    required bool enabled,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      height: 54,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDF2FF),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  color: Color(0xFF8EA6F3),
+                  fontSize: 16,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              ),
             ),
           ),
-        ),
+          SizedBox(
+            width: 98,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: enabled
+                    ? const Color(0xFF9FB6F5)
+                    : const Color(0xFFD7E1FB),
+                elevation: 0,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+                ),
+              ),
+              child: Text(
+                buttonText,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: enabled ? Colors.white : const Color(0xFF94A7DE),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

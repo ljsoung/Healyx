@@ -1,21 +1,22 @@
+// 로그인 화면 구현
 import 'package:flutter/material.dart';
-import 'find_id_result_screen.dart';
-import 'sign_up_screen.dart';
-import 'find_password_screen.dart';
+import '../login_signup_screen/sign_up_screen.dart';
+import '../find_account_screen/find_id_screen.dart';
+import '../find_account_screen/find_password_screen.dart';
 
-class FindIdScreen extends StatefulWidget {
-  const FindIdScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<FindIdScreen> createState() => _FindIdScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _FindIdScreenState extends State<FindIdScreen> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController codeController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController idController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  bool get isEmailFilled => emailController.text.trim().isNotEmpty;
+  bool isAutoLogin = false;
+  bool isObscure = true;
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -27,52 +28,10 @@ class _FindIdScreenState extends State<FindIdScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    emailController.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
   void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    codeController.dispose();
+    idController.dispose();
+    passwordController.dispose();
     super.dispose();
-  }
-
-  void _requestVerification() {
-    if (!isEmailFilled) return;
-    _showMessage('인증요청이 전송되었습니다.');
-  }
-
-  void _confirmFindId() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const FindIdResultScreen(),
-      ),
-    );
-  }
-
-  void _goToFindPasswordScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const FindPasswordScreen(),
-      ),
-    );
-  }
-
-  void _goToSignUpScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SignUpScreen(),
-      ),
-    );
   }
 
   @override
@@ -90,6 +49,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
                   children: [
                     const SizedBox(height: 8),
 
+                    // 상단 바
                     Row(
                       children: [
                         IconButton(
@@ -105,9 +65,9 @@ class _FindIdScreenState extends State<FindIdScreen> {
                         const Expanded(
                           child: Center(
                             child: Text(
-                              '아이디 찾기',
+                              '로그인',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 28,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF4E7CFF),
                               ),
@@ -122,7 +82,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
 
                     const Center(
                       child: Text(
-                        '아이디 확인을 위해 본인 확인이 필요합니다',
+                        '계정으로 로그인 하여 서비스를 이용하세요.',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF9AA7E8),
@@ -134,7 +94,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
                     const SizedBox(height: 56),
 
                     const Text(
-                      '이름',
+                      '아이디',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -142,15 +102,17 @@ class _FindIdScreenState extends State<FindIdScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+
                     _buildInputField(
-                      controller: nameController,
-                      hintText: '이름을 입력하세요',
+                      controller: idController,
+                      hintText: '아이디를 입력하세요',
+                      obscureText: false,
                     ),
 
                     const SizedBox(height: 28),
 
                     const Text(
-                      '이메일',
+                      '비밀번호',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -158,31 +120,71 @@ class _FindIdScreenState extends State<FindIdScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildEmailField(),
 
-                    const SizedBox(height: 28),
-
-                    const Text(
-                      '인증번호',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     _buildInputField(
-                      controller: codeController,
-                      hintText: '인증번호를 입력하세요',
+                      controller: passwordController,
+                      hintText: '비밀번호를 입력하세요',
+                      obscureText: isObscure,
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            isObscure = !isObscure;
+                          });
+                        },
+                        icon: Icon(
+                          isObscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: const Color(0xFF9AA7E8),
+                        ),
+                      ),
                     ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Checkbox(
+                            value: isAutoLogin,
+                            onChanged: (value) {
+                              setState(() {
+                                isAutoLogin = value ?? false;
+                              });
+                            },
+                            activeColor: const Color(0xFF4E7CFF),
+                            side: const BorderSide(
+                              color: Color(0xFF4E7CFF),
+                              width: 1.4,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '자동 로그인',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF4E7CFF),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 36),
 
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _confirmFindId,
+                        onPressed: () {
+                          _showMessage('로그인 버튼 클릭');
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2260FF),
                           elevation: 0,
@@ -191,7 +193,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
                           ),
                         ),
                         child: const Text(
-                          '확인',
+                          '로그인',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -205,6 +207,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
               ),
             ),
 
+            // 하단 영역
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
@@ -221,13 +224,16 @@ class _FindIdScreenState extends State<FindIdScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        '아이디 찾기',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8EA0F5),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      _buildBottomTextButton(
+                        text: '아이디 찾기',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FindIdScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Text(
                         ' | ',
@@ -236,16 +242,16 @@ class _FindIdScreenState extends State<FindIdScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: _goToFindPasswordScreen,
-                        child: const Text(
-                          '비밀번호 찾기',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF8EA0F5),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      _buildBottomTextButton(
+                        text: '비밀번호 찾기',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FindPasswordScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const Text(
                         ' | ',
@@ -254,16 +260,16 @@ class _FindIdScreenState extends State<FindIdScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: _goToSignUpScreen,
-                        child: const Text(
-                          '회원가입',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF8EA0F5),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      _buildBottomTextButton(
+                        text: '회원가입',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SignUpScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -299,6 +305,8 @@ class _FindIdScreenState extends State<FindIdScreen> {
   Widget _buildInputField({
     required TextEditingController controller,
     required String hintText,
+    required bool obscureText,
+    Widget? suffixIcon,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -307,6 +315,7 @@ class _FindIdScreenState extends State<FindIdScreen> {
       ),
       child: TextField(
         controller: controller,
+        obscureText: obscureText,
         style: const TextStyle(
           fontSize: 16,
           color: Colors.black87,
@@ -323,69 +332,25 @@ class _FindIdScreenState extends State<FindIdScreen> {
             vertical: 16,
           ),
           border: InputBorder.none,
+          suffixIcon: suffixIcon,
         ),
       ),
     );
   }
 
-  Widget _buildEmailField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF2FF),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-              decoration: const InputDecoration(
-                hintText: '이메일을 입력하세요',
-                hintStyle: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFB0B9F5),
-                  fontWeight: FontWeight.w500,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: isEmailFilled ? _requestVerification : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              alignment: Alignment.center,
-              width: 92,
-              height: 54,
-              decoration: BoxDecoration(
-                color: isEmailFilled
-                    ? const Color(0xFF6F8EF6)
-                    : const Color(0xFFBFCBF8),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
-                ),
-              ),
-              child: const Text(
-                '인증요청',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
+  Widget _buildBottomTextButton({
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF8EA0F5),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

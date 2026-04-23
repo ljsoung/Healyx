@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'find_hospital_main.dart';
+import 'find_hospital_screen/find_hospital_main.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
