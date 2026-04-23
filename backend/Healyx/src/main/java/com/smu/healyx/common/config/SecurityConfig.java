@@ -31,6 +31,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/email/**").permitAll()
                 // FCM 테스트
                 .requestMatchers("/api/fcm/**").permitAll()
+                // 병원 찾기 + 의료비 예측 Agent (게스트 허용 — 프로필 미제공 시 기본값 적용)
+                .requestMatchers("/api/agent/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 그 외는 인증 필요

@@ -60,9 +60,9 @@ class HiraApiServiceTest {
     @DisplayName("위치 기반 검색 — 서울 시청 반경 3km")
     void searchByLocation() {
         HospitalSearchRequest request = new HospitalSearchRequest();
-        request.setXPos("126.9780"); // 서울 시청 경도
-        request.setYPos("37.5665");  // 서울 시청 위도
-        request.setRadius("3");
+        request.setXPos(126.978000000000000); // 서울 시청 경도
+        request.setYPos(37.566500000000000);  // 서울 시청 위도
+        request.setRadius(3000);
         request.setNumOfRows(5);
 
         HospitalSearchResponse response = hiraApiService.searchHospitals(request);
@@ -101,9 +101,9 @@ class HiraApiServiceTest {
     void searchByLocationAndDepartment() {
         HospitalSearchRequest request = new HospitalSearchRequest();
         request.setDgsbjtCd("01"); // 내과 (추후 GPT가 추출)
-        request.setXPos("126.9780");
-        request.setYPos("37.5665");
-        request.setRadius("5");
+        request.setXPos(126.978000000000000);
+        request.setYPos(37.566500000000000);
+        request.setRadius(5000);
         request.setNumOfRows(10);
 
         HospitalSearchResponse response = hiraApiService.searchHospitals(request);
@@ -149,8 +149,8 @@ class HiraApiServiceTest {
         for (HospitalDto h : response.getHospitals()) {
             System.out.printf(" %-8s | %-20s | %s%n",
                     h.getHospitalType(), h.getHospitalName(), h.getAddress());
-            System.out.printf("           위도: %-10s 경도: %-10s 전화: %s%n",
-                    h.getLatitude(), h.getLongitude(), h.getTelephone());
+            System.out.printf("           위도: %.15f 경도: %.15f 거리: %dm 전화: %s%n",
+                    h.getLatitude(), h.getLongitude(), h.getDistance(), h.getTelephone());
         }
         System.out.println();
     }
