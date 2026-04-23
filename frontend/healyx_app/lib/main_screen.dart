@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'find_hospital_screen/find_hospital_main.dart';
+import 'translation/translation_upload_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -105,13 +106,18 @@ class MainScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 14),
                           Expanded(
-                            child: _buildTopMenuCard(
-                              icon: Icons.translate,
-                              title: '의료 번역',
-                              onTap: () {
-                                _showMessage(context, '의료 번역 클릭');
-                              },
-                            ),
+                          child: _buildTopMenuCard(
+                            icon: Icons.translate,
+                            title: '의료 번역',
+                            onTap: () {
+                              Navigator.push(
+                               context,
+                               MaterialPageRoute(
+                                 builder: (context) => const TranslationUploadScreen(),
+                               ),
+                             );
+                            },
+                           ),
                           ),
                         ],
                       ),
