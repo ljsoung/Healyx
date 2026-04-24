@@ -12,6 +12,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthException(AuthException e) {
+        log.warn("Auth error [{}]: {}", e.getErrorCode(), e.getMessage());
+        return ResponseEntity
+            .status(e.getStatus())
+            .body(ApiResponse.error(e.getErrorCode(), e.getMessage()));
+    }
+
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleExternalApiException(ExternalApiException e) {
         log.error("External API error [{}]: {}", e.getErrorCode(), e.getMessage());
