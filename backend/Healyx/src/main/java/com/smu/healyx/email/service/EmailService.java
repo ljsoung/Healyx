@@ -1,10 +1,12 @@
 package com.smu.healyx.email.service;
 
+import com.smu.healyx.common.exception.AuthException;
 import com.smu.healyx.common.exception.ExternalApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class EmailService {
 
     private final JavaMailSender mailSender;
@@ -24,8 +27,8 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    // 인증 코드 TTL: 3분
     private static final Duration CODE_TTL = Duration.ofMinutes(3);
+    private static final Duration VERIFIED_TTL = Duration.ofMinutes(10);
     private static final int CODE_LENGTH = 6;
 
     /**
@@ -60,9 +63,31 @@ public class EmailService {
             throw new ExternalApiException("EMAIL_CODE_INVALID", "인증 코드가 올바르지 않습니다.");
         }
 
-        // 검증 성공 후 즉시 삭제 (재사용 방지)
+        // 검증 성공 후 코드 삭제 (재사용 방지)
         redisTemplate.delete(redisKey);
+
+        // 인증 완료 마커 저장 (TTL 10분) — 회원가입/찾기/재설정 API에서 확인
+        String verifiedKey = "email:verified:" + purpose + ":" + email;
+        redisTemplate.opsForValue().set(verifiedKey, "true", VERIFIED_TTL);
+
         log.debug("인증 코드 검증 성공: purpose={}, email={}****", purpose, email.substring(0, 4));
+    }
+
+    /**
+     * 이메일 인증 완료 여부를 확인하고 마커를 소비합니다.
+     * 인증이 완료되지 않았으면 AuthException을 던집니다.
+     */
+    public void checkAndConsumeVerified(String email, String purpose) {
+        String verifiedKey = "email:verified:" + purpose + ":" + email;
+        String verified = redisTemplate.opsForValue().get(verifiedKey);
+
+        if (!"true".equals(verified)) {
+            throw new AuthException("EMAIL_NOT_VERIFIED",
+                    "이메일 인증이 완료되지 않았습니다. 인증 코드를 먼저 확인해 주세요.",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        redisTemplate.delete(verifiedKey);
     }
 
     /** 6자리 숫자 인증 코드를 생성합니다. */
