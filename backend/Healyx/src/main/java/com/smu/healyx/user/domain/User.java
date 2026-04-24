@@ -65,4 +65,30 @@ public class User {
     @Column(name = "is_active", nullable = false,
             columnDefinition = "TINYINT(1) DEFAULT 1")
     private boolean isActive;
+
+    /** 비밀번호 변경 */
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
+    /** 로그인 실패 횟수 증가 */
+    public void incrementLoginFailedCount() {
+        this.loginFailedCount++;
+    }
+
+    /** 로그인 성공 시 실패 카운트 및 잠금 초기화 */
+    public void resetLoginFailed() {
+        this.loginFailedCount = 0;
+        this.lockedUntil = null;
+    }
+
+    /** 로그인 5회 실패 시 30분 잠금 */
+    public void lockAccount() {
+        this.lockedUntil = LocalDateTime.now().plusMinutes(30);
+    }
+
+    /** 만 나이 갱신 */
+    public void updateAge(int age) {
+        this.age = age;
+    }
 }
