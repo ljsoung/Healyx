@@ -1,11 +1,13 @@
 package com.smu.healyx.user.service;
 
+import com.smu.healyx.common.exception.AuthException;
 import com.smu.healyx.user.domain.User;
 import com.smu.healyx.user.dto.MyProfileResponse;
 import com.smu.healyx.user.dto.UserProfileDto;
 import com.smu.healyx.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,14 @@ public class UserProfileService {
                 .gender(user.getGender())
                 .insured(user.isHasHealthInsurance())
                 .build();
+    }
+
+    /** 선호 언어 업데이트 */
+    @Transactional
+    public void updateLanguage(Long userId, String languageCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthException("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+        user.updateLanguage(languageCode);
     }
 
     /** 자동 로그인 및 프로필 화면용 전체 프로필 조회 */

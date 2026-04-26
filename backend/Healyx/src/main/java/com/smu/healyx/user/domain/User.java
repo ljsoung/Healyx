@@ -91,4 +91,9 @@ public class User {
     public void updateAge(int age) {
         this.age = age;
     }
+
+    /** 선호 언어 변경 */
+    public void updateLanguage(String languageCode) {
+        this.preferredLanguage = languageCode;
+    }
 }
