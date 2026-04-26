@@ -37,6 +37,14 @@ public class UserProfileService {
         user.updateLanguage(languageCode);
     }
 
+    /** 건강보험 가입 상태 업데이트 */
+    @Transactional
+    public void updateInsuranceStatus(Long userId, String insuranceStatus) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthException("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+        user.updateInsuranceStatus("insured".equals(insuranceStatus));
+    }
+
     /** 자동 로그인 및 프로필 화면용 전체 프로필 조회 */
     @Transactional(readOnly = true)
     public MyProfileResponse getMyProfile(Long userId) {
