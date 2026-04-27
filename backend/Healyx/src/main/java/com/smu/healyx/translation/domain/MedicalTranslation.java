@@ -22,17 +22,26 @@ public class MedicalTranslation {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "original_text", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "original_text", columnDefinition = "TEXT")
     private String originalText;
 
-    @Column(name = "translated_text", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "translated_text", columnDefinition = "TEXT")
     private String translatedText;
 
-    @Column(name = "source_lang", nullable = false, length = 10)
-    private String sourceLang;
+    @Column(name = "source_language", length = 10)
+    private String sourceLanguage;
 
-    @Column(name = "target_lang", nullable = false, length = 10)
-    private String targetLang;
+    @Column(name = "target_language", nullable = false, length = 10)
+    private String targetLanguage;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
+    @Column(name = "translated_image_url", length = 500)
+    private String translatedImageUrl;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -40,5 +49,6 @@ public class MedicalTranslation {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        this.expiresAt = LocalDateTime.now().plusYears(1);
     }
 }

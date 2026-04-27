@@ -35,7 +35,6 @@ public class CommunityCommentRepositoryTest {
 
     private CommunityPost createPost(User user) {
         return communityPostRepository.save(CommunityPost.builder()
-                .user(user).category("자유")
                 .title("댓글테스트").content("내용")
                 .build());
     }

@@ -34,12 +34,12 @@ public class CommunityComment {
     @JoinColumn(name = "mention_user_id")
     private User mentionUser;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
-    private String content;
-
     @Column(name = "depth", nullable = false)
     @Builder.Default
     private int depth = 0;
+
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content;
 
     @Column(name = "is_deleted", nullable = false,
             columnDefinition = "TINYINT(1) DEFAULT 0")
@@ -48,8 +48,17 @@ public class CommunityComment {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

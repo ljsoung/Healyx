@@ -8,7 +8,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reviews",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "hospital_id"}))
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_review_user_hospital",
+                columnNames = {"user_id", "hospital_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -33,6 +35,9 @@ public class Review {
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "receipt_image_url", length = 500)
+    private String receiptImageUrl;
 
     @Column(name = "receipt_verified", nullable = false,
             columnDefinition = "TINYINT(1) DEFAULT 0")

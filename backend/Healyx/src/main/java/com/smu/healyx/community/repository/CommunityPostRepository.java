@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface CommunityPostRepository extends JpaRepository<CommunityPost, Long> {
-    List<CommunityPost> findByUser_UserIdAndIsDeletedFalse(Long userId);
-    List<CommunityPost> findByCategoryAndIsDeletedFalse(String category);
+    List<CommunityPost> findByUser_UserId(Long userId);
+    List<CommunityPost> findAll();
 }

@@ -16,9 +16,15 @@ public class RegionAdjustment {
     @Column(name = "region_adj_id")
     private Long regionAdjId;
 
-    @Column(name = "region", nullable = false, length = 50)
+    @Column(name = "region", nullable = false, length = 20)
     private String region;
+
+    @Column(name = "department", nullable = false, length = 30)
+    private String department;
 
     @Column(name = "adj_factor", nullable = false)
     private double adjFactor;
+
+    @Column(name = "adj_factor_full", nullable = false)
+    private double adjFactorFull;
 }

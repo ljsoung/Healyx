@@ -32,7 +32,6 @@ public class CommunityLikeRepositoryTest {
                 .build());
 
         CommunityPost post = communityPostRepository.save(CommunityPost.builder()
-                .user(user).category("자유")
                 .title("좋아요테스트").content("내용")
                 .build());
 
