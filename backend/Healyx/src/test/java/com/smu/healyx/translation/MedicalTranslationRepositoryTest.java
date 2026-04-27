@@ -37,15 +37,15 @@ public class MedicalTranslationRepositoryTest {
                 .user(user)
                 .originalText("두통이 심합니다")
                 .translatedText("I have a severe headache")
-                .sourceLang("ko")
-                .targetLang("en")
+                .sourceLanguage("ko")
+                .targetLanguage("en")
                 .build());
 
         List<MedicalTranslation> result = medicalTranslationRepository
                 .findByUser_UserId(user.getUserId());
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTargetLang()).isEqualTo("en");
+        assertThat(result.get(0).getTargetLanguage()).isEqualTo("en");
     }
 
     @Test
@@ -53,8 +53,8 @@ public class MedicalTranslationRepositoryTest {
         medicalTranslationRepository.save(MedicalTranslation.builder()
                 .originalText("열이 납니다")
                 .translatedText("I have a fever")
-                .sourceLang("ko")
-                .targetLang("en")
+                .sourceLanguage("ko")
+                .targetLanguage("en")
                 .build());
 
         List<MedicalTranslation> result = medicalTranslationRepository.findByUserIsNull();

@@ -23,7 +23,7 @@ public class ReportRepositoryTest {
     @Autowired private UserRepository userRepository;
 
     @Test
-    void 신고_저장_및_조회() {
+    void 신고_저장_및_대상별_조회() {
         User reporter = userRepository.save(User.builder()
                 .username("reportuser1").passwordHash("hash")
                 .realName("신고유저").email("report@healyx.com")
@@ -41,11 +41,11 @@ public class ReportRepositoryTest {
                 .findByTargetTypeAndTargetId("POST", 1L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatus()).isEqualTo("PENDING");
+        assertThat(result.get(0).getReason()).isEqualTo("부적절한 내용");
     }
 
     @Test
-    void 상태별_신고_조회() {
+    void 신고자별_조회() {
         User reporter = userRepository.save(User.builder()
                 .username("reportuser2").passwordHash("hash")
                 .realName("신고유저2").email("report2@healyx.com")
@@ -59,7 +59,9 @@ public class ReportRepositoryTest {
                 .reason("스팸")
                 .build());
 
-        List<Report> pending = reportRepository.findByStatus("PENDING");
-        assertThat(pending).isNotEmpty();
+        List<Report> result = reportRepository
+                .findByReporter_UserId(reporter.getUserId());
+
+        assertThat(result).hasSize(1);
     }
 }

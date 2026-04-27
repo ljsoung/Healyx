@@ -32,12 +32,10 @@ public class NotificationRepositoryTest {
 
         notificationRepository.save(Notification.builder()
                 .user(user).type("COMMENT")
-                .message("새 댓글이 달렸습니다")
                 .build());
 
         notificationRepository.save(Notification.builder()
                 .user(user).type("LIKE")
-                .message("좋아요를 받았습니다")
                 .isRead(true)
                 .build());
 
