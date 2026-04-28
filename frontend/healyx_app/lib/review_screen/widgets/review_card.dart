@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+
+import 'review_image_slider.dart';
+import 'review_rating_stars.dart';
+
+class ReviewData {
+  final String nickname;
+  final String content;
+  final String rating;
+  final bool hasImages;
+  final int imageCount;
+
+  ReviewData({
+    required this.nickname,
+    required this.content,
+    required this.rating,
+    this.hasImages = false,
+    this.imageCount = 0,
+  });
+}
+
+class ReviewCard extends StatelessWidget {
+  final ReviewData review;
+
+  const ReviewCard({
+    super.key,
+    required this.review,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color mainBlue = Color(0xFF2260FF);
+    const Color softBg = Color(0xFFECF1FF);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.12),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: softBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              review.nickname,
+              style: const TextStyle(
+                color: mainBlue,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            review.content,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          ReviewRatingStars(
+            rating: int.tryParse(review.rating) ?? 0,
+            size: 14,
+            showScore: true,
+          ),
+
+          if (review.hasImages) ...[
+            const SizedBox(height: 12),
+            ReviewImageSlider(
+              imageCount: review.imageCount,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
