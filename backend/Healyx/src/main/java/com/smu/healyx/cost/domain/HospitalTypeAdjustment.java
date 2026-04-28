@@ -16,7 +16,7 @@ public class HospitalTypeAdjustment {
     @Column(name = "type_adj_id")
     private Long typeAdjId;
 
-    @Column(name = "cl_cd", nullable = false, length = 5)
+    @Column(name = "cl_cd", nullable = false, length = 20)
     private String clCd;
 
     @Column(name = "adj_factor", nullable = false)
