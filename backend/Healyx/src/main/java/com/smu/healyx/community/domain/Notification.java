@@ -22,11 +22,11 @@ public class Notification {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "type", nullable = false, length = 30)
+    @Column(name = "type", nullable = false, length = 10)
     private String type;
 
-    @Column(name = "message", nullable = false, length = 255)
-    private String message;
+    @Column(name = "reference_id")
+    private Long referenceId;
 
     @Column(name = "is_read", nullable = false,
             columnDefinition = "TINYINT(1) DEFAULT 0")

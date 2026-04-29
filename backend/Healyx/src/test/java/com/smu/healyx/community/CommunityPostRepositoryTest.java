@@ -25,50 +25,39 @@ public class CommunityPostRepositoryTest {
     @Test
     void 게시글_저장_및_조회() {
         User user = userRepository.save(User.builder()
-                .username("postuser1")
-                .passwordHash("hash")
-                .realName("게시글유저")
-                .email("post@healyx.com")
-                .nickname("게시글닉")
-                .preferredLanguage("en")
+                .username("postuser1").passwordHash("hash")
+                .realName("게시글유저").email("post@healyx.com")
+                .nickname("게시글닉").preferredLanguage("en")
                 .build());
 
         communityPostRepository.save(CommunityPost.builder()
                 .user(user)
-                .category("자유")
                 .title("첫 게시글")
                 .content("안녕하세요")
                 .build());
 
         List<CommunityPost> result = communityPostRepository
-                .findByUser_UserIdAndIsDeletedFalse(user.getUserId());
+                .findByUser_UserId(user.getUserId());
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("첫 게시글");
     }
 
     @Test
-    void 카테고리별_게시글_조회() {
+    void 전체_게시글_조회() {
         User user = userRepository.save(User.builder()
-                .username("postuser2")
-                .passwordHash("hash")
-                .realName("카테고리유저")
-                .email("cat@healyx.com")
-                .nickname("카테고리닉")
-                .preferredLanguage("en")
+                .username("postuser2").passwordHash("hash")
+                .realName("게시글유저2").email("post2@healyx.com")
+                .nickname("게시글닉2").preferredLanguage("en")
                 .build());
 
         communityPostRepository.save(CommunityPost.builder()
                 .user(user)
-                .category("정보")
-                .title("정보 게시글")
-                .content("유용한 정보")
+                .title("전체 조회 테스트")
+                .content("내용")
                 .build());
 
-        List<CommunityPost> result = communityPostRepository
-                .findByCategoryAndIsDeletedFalse("정보");
-
+        List<CommunityPost> result = communityPostRepository.findAll();
         assertThat(result).isNotEmpty();
-        assertThat(result.get(0).getCategory()).isEqualTo("정보");
     }
 }

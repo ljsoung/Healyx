@@ -34,7 +34,6 @@ public class CommunityBookmarkRepositoryTest {
                 .build());
 
         CommunityPost post = communityPostRepository.save(CommunityPost.builder()
-                .user(user).category("자유")
                 .title("북마크테스트").content("내용")
                 .build());
 

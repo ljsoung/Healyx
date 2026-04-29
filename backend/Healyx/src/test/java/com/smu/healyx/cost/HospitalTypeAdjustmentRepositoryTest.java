@@ -23,12 +23,12 @@ public class HospitalTypeAdjustmentRepositoryTest {
     @Test
     void 병원유형_보정계수_저장_및_조회() {
         hospitalTypeAdjustmentRepository.save(HospitalTypeAdjustment.builder()
-                .hospitalType("상급종합병원")
+                .clCd("01")
                 .adjFactor(1.5)
                 .build());
 
         Optional<HospitalTypeAdjustment> result = hospitalTypeAdjustmentRepository
-                .findByHospitalType("상급종합병원");
+                .findByClCd("01");
 
         assertThat(result).isPresent();
         assertThat(result.get().getAdjFactor()).isEqualTo(1.5);

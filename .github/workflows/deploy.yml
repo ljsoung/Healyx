@@ -49,4 +49,5 @@ jobs:
               -p 8080:8080 \
               --restart always \
               -e SPRING_PROFILES_ACTIVE=prod \
+              -e S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }} \
               ${{ secrets.DOCKER_USERNAME }}/healyx-app:latest

@@ -6,7 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reports")
+@Table(name = "reports",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_report_unique",
+                columnNames = {"reporter_id", "target_type", "target_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -22,18 +25,14 @@ public class Report {
     @JoinColumn(name = "reporter_id", nullable = false)
     private User reporter;
 
-    @Column(name = "target_type", nullable = false, length = 20)
+    @Column(name = "target_type", nullable = false, length = 10)
     private String targetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Column(name = "reason", nullable = false, length = 255)
+    @Column(name = "reason", nullable = false, length = 100)
     private String reason;
-
-    @Column(name = "status", nullable = false, length = 20)
-    @Builder.Default
-    private String status = "PENDING";
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

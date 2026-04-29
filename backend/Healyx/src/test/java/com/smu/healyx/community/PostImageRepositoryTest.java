@@ -38,7 +38,6 @@ public class PostImageRepositoryTest {
 
         CommunityPost post = communityPostRepository.save(CommunityPost.builder()
                 .user(user)
-                .category("자유")
                 .title("이미지 게시글")
                 .content("이미지 있어요")
                 .build());

@@ -96,4 +96,9 @@ public class User {
     public void updateLanguage(String languageCode) {
         this.preferredLanguage = languageCode;
     }
+
+    /** 건강보험 가입 상태 변경 */
+    public void updateInsuranceStatus(boolean insured) {
+        this.hasHealthInsurance = insured;
+    }
 }
