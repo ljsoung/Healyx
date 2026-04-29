@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../main_screen.dart';
 import 'find_hospital_detail.dart';
 import 'pain_score_slide.dart';
+import '../constants/hospital_constants.dart'; // 👈 더미 데이터 import
 
 class FindHospitalResultScreen extends StatefulWidget {
   const FindHospitalResultScreen({super.key});
@@ -24,27 +24,6 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
   final Color cardColor = const Color(0xFFCAD6FF);
   final Color mapBgColor = const Color(0xFFECF1FF);
   final Color grayText = const Color(0xFF5B5B5B);
-
-  final List<Map<String, dynamic>> hospitalList = [
-    {
-      'name': '서울병원',
-      'address': '서울특별시 송파구 올림픽로 43길 88',
-      'rating': '4.8',
-      'foreign': true,
-    },
-    {
-      'name': '@@병원',
-      'address': '서울특별시 송파구 올림픽로 43길 88',
-      'rating': '4.8',
-      'foreign': false,
-    },
-    {
-      'name': '00병원',
-      'address': '서울특별시 송파구 올림픽로 43길 88',
-      'rating': '4.8',
-      'foreign': true,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -90,11 +69,7 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                   ),
                 );
               },
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                color: mainBlue,
-                size: 21,
-              ),
+              icon: Icon(Icons.arrow_back_ios_new, color: mainBlue, size: 21),
             ),
           ),
           Center(
@@ -102,7 +77,7 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
               '병원 찾기',
               style: TextStyle(
                 color: mainBlue,
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -140,9 +115,7 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(26),
-            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
           ),
           child: Stack(
             children: [
@@ -159,38 +132,26 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 22),
-
                   _buildSortRow(),
-
                   const SizedBox(height: 10),
 
-                  // 비로그인일 때만 보험 미적용 문구 + 물음표 표시
                   if (!isLoggedIn)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           '예측된 의료비는 건강보험 미적용 기준으로 계산되었습니다.',
-                          style: TextStyle(
-                            color: mainBlue,
-                            fontSize: 10.5,
-                          ),
+                          style: TextStyle(color: mainBlue, fontSize: 10.5),
                         ),
                         const SizedBox(width: 4),
-
                         GestureDetector(
                           onTap: () {
                             setState(() {
                               showLoginGuide = !showLoginGuide;
                             });
                           },
-                          child: Icon(
-                            Icons.info,
-                            color: mainBlue,
-                            size: 16,
-                          ),
+                          child: Icon(Icons.info, color: mainBlue, size: 16),
                         ),
                       ],
                     ),
@@ -202,18 +163,17 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: mainBlue,
-                      fontSize: 11,
+                      fontSize: 10.5,
                       height: 1.4,
                     ),
                   ),
 
                   const SizedBox(height: 12),
-
-                  ...hospitalList.map((item) => _buildHospitalCard(item)),
+                  // 👈 HOSPITAL_LIST = 저 constants 파일에서 가져온 더미 데이터
+                  ...HOSPITAL_LIST.map((item) => _buildHospitalCard(item)),
                 ],
               ),
 
-              // 비로그인 상태에서 물음표 클릭 시 안내 팝업
               if (!isLoggedIn && showLoginGuide)
                 Positioned(
                   right: 6,
@@ -308,9 +268,7 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
           ),
           const SizedBox(width: 3),
           Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_off,
+            isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
             color: mainBlue,
             size: 22,
           ),
@@ -343,31 +301,23 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                 ),
               ),
             ),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                item['name'],
+                item['hospitalName'],
                 style: TextStyle(
                   color: mainBlue,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-
               const SizedBox(height: 5),
-
               Text(
                 item['address'],
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.black),
               ),
-
               const SizedBox(height: 8),
-
               Row(
                 children: [
                   Expanded(
@@ -410,9 +360,7 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 8),
-
               Row(
                 children: [
                   Expanded(
@@ -422,8 +370,11 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => FindHospitalDetailScreen(
-                              hasReview: item['name'] != '@@병원',
-                              hasBadge: item['foreign'],
+                              hospitalName: item['hospitalName'],
+                              address: item['address'],
+                              rating: (item['rating'] as num).toDouble(),
+                              hasBadge: item['hasBadge'] == true,
+                              hasReview: item['hasReview'] == true,
                               isLoggedIn: isLoggedIn,
                             ),
                           ),
@@ -447,27 +398,24 @@ class _FindHospitalResultScreenState extends State<FindHospitalResultScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 6),
-
                   Container(
                     width: 62,
                     height: 31,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.star_border,
-                          color: mainBlue,
-                          size: 14,
-                        ),
+                        Icon(Icons.star_border, color: mainBlue, size: 14),
                         const SizedBox(width: 2),
+
                         Text(
-                          item['rating'],
+                          item['rating'].toString(),
                           style: TextStyle(
                             color: mainBlue,
                             fontSize: 11.5,
