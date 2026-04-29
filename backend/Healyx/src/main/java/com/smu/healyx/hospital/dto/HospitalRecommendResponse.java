@@ -14,4 +14,6 @@ public class HospitalRecommendResponse {
     private String department;
     private double searchRadiusKm;
     private List<HospitalSummaryDto> hospitals;
+    private boolean hasResult;
+    private String emptyReason;
 }

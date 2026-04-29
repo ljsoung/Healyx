@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.google.common.graph.ElementOrder.sorted;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,9 +27,11 @@ public class HospitalRecommendService {
     private static final int TOP_N = 5;
 
     public HospitalRecommendResponse recommend(HospitalRecommendRequest request) {
-        // 1. GPT 증상 분석
+        // 1. GPT 증상 분석: 프론트에서 riskLevel 넘어오면 GPT 결과 무시하고 그 값 사용
         SymptomAnalysisResult analysis = gptSymptomService.analyzeSymptom(request.getSymptom());
-        int    riskLevel  = analysis.getRiskLevel();
+        int riskLevel = (request.getRiskLevel() != null)
+                ? request.getRiskLevel()
+                : analysis.getRiskLevel();
         String department = analysis.getDepartment();
 
         // 2. 긴급도별 탐색 반경
@@ -38,18 +42,27 @@ public class HospitalRecommendService {
                 request.getLatitude(), request.getLongitude(), radiusKm, department);
 
         // 4. 스코어링 → 정렬 → Top 5
+        Comparator<HospitalSummaryDto> comparator = request.isDistanceSort()
+                ? Comparator.comparingDouble(HospitalSummaryDto::getDistanceKm)
+                : Comparator.comparingDouble(HospitalSummaryDto::getScore).reversed();
+
         List<HospitalSummaryDto> result = candidates.stream()
-                .map(h -> buildScoredDto(h, request.getLatitude(), request.getLongitude(),
-                        radiusKm, riskLevel))
-                .sorted(Comparator.comparingDouble(HospitalSummaryDto::getScore).reversed())
+                .map(h -> buildScoredDto(h, request.getLatitude(), request.getLongitude(), radiusKm, riskLevel))
+                .sorted(comparator)
                 .limit(TOP_N)
                 .toList();
+
+        boolean hasResult = !result.isEmpty();
+        String emptyReason = hasResult ? null :
+                department + " 진료과 병원이 " + radiusKm + "km 이내에 없습니다.";
 
         return HospitalRecommendResponse.builder()
                 .riskLevel(riskLevel)
                 .department(department)
                 .searchRadiusKm(radiusKm)
                 .hospitals(result)
+                .hasResult(hasResult)
+                .emptyReason(emptyReason)
                 .build();
     }
 
