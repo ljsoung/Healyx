@@ -124,9 +124,9 @@ public class HospitalRecommendService {
             double typeScore = hospitalTypeScore(h.getType(), riskLevel);
             return 0.50 * typeScore + 0.30 * foreignScore + 0.20 * distanceScore;
         } else {
+            double typeScore  = hospitalTypeScore(h.getType(), riskLevel);
             double ratingScore = (avgRating != null) ? avgRating / 5.0 : 0.0;
-            // 진료과 점수: 쿼리에서 이미 필터링했으므로 항상 1.0
-            return 0.35 * 1.0 + 0.30 * foreignScore + 0.15 * ratingScore + 0.20 * distanceScore;
+            return 0.35 * typeScore + 0.30 * foreignScore + 0.15 * ratingScore + 0.20 * distanceScore;
         }
     }
 
