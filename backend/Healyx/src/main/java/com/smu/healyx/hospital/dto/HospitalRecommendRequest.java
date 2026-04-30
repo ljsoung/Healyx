@@ -23,17 +23,19 @@ public class HospitalRecommendRequest {
     )
     private String languageCode = "en";
 
+    /**
+     * 사용자 슬라이더 선택값 1~5.
+     * null이면 기본값 2(경증)로 처리. Agent 내부에서 clCd·반경 결정에 사용.
+     */
     @Min(value = 1, message = "riskLevel 범위 오류: 슬라이더 범위(1~5)를 벗어난 값이 전달되었습니다.")
     @Max(value = 5, message = "riskLevel 범위 오류: 슬라이더 범위(1~5)를 벗어난 값이 전달되었습니다.")
     private Integer riskLevel;
-
-    private String sortBy = "score";
 
     public String getEffectiveLanguageCode() {
         return (languageCode == null || languageCode.isBlank()) ? "en" : languageCode;
     }
 
-    public boolean isDistanceSort() {
-        return "distance".equalsIgnoreCase(sortBy);
+    public int getEffectiveRiskLevel() {
+        return (riskLevel != null) ? riskLevel : 2;
     }
 }
