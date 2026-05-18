@@ -55,6 +55,17 @@ public class HospitalAgentService {
     private static final String TOOL_EXTRACT_ICD10    = "extract_icd10_code";
 
     /**
+     * 병원 이름에 포함될 수 있는 한국 진료과 키워드.
+     * HIRA API가 응답 아이템에 dgsbjtCd를 미반환하는 경우 이름 기반 필터에 사용.
+     */
+    private static final List<String> SPECIALTY_KEYWORDS = List.of(
+            "안과", "이비인후과", "산부인과", "정형외과", "내과", "외과",
+            "피부과", "비뇨기과", "비뇨의학과", "소아과", "소아청소년과",
+            "신경과", "신경외과", "정신과", "정신건강의학과", "치과",
+            "흉부외과", "재활의학과", "가정의학과", "응급의학과"
+    );
+
+    /**
      * 위험도별 병원 종별 범위 (낮은 단계일수록 더 많은 종별 포함)
      *
      *   1: 의원 ~ 상급종합 [31, 21, 11, 01]
@@ -124,7 +135,7 @@ public class HospitalAgentService {
                         departmentName = args.path("departmentName").asText();
 
                         // clCd 범위·반경은 위험도 기반 서버 로직으로 결정
-                        hospitals = searchAcrossHospitalTypes(departmentCode, req);
+                        hospitals = searchAcrossHospitalTypes(departmentCode, departmentName, req);
 
                         String result = objectMapper.writeValueAsString(
                                 Map.of("success", true, "totalCount", hospitals.getTotalCount()));
@@ -171,7 +182,7 @@ public class HospitalAgentService {
      * ykiho 기준으로 중복을 제거한 뒤 병합합니다.
      */
     private HospitalSearchResponse searchAcrossHospitalTypes(
-            String dgsbjtCd, HospitalAssistantRequest req) {
+            String dgsbjtCd, String departmentName, HospitalAssistantRequest req) {
 
         List<String> clCds = RISK_TO_CL_CDS.getOrDefault(req.getRiskLevel(), List.of("31", "21", "11", "01"));
         int radius         = RISK_TO_RADIUS.getOrDefault(req.getRiskLevel(), 3000);
@@ -209,12 +220,16 @@ public class HospitalAgentService {
                     .build();
         }
 
-        // HIRA API 위치검색+dgsbjtCd 병행 시 필터 미적용 대응 — 응답의 dgsbjtCd로 서버 측 재필터
-        if (org.springframework.util.StringUtils.hasText(dgsbjtCd)) {
+        // HIRA API가 응답 아이템에 dgsbjtCd를 미반환하므로 병원 이름 기반으로 재필터.
+        // 한국 의원은 이름에 진료과를 포함하는 것이 관행이므로 다른 진료과 키워드 포함 시 제거.
+        // 대형병원(clCd 01·11·21)은 다진료과 운영으로 이름에 과명이 없어 포용적 통과.
+        if (org.springframework.util.StringUtils.hasText(departmentName)) {
             merged.entrySet().removeIf(entry -> {
-                String hospitalDept = entry.getValue().getDgsbjtCd();
-                return org.springframework.util.StringUtils.hasText(hospitalDept)
-                        && !dgsbjtCd.equals(hospitalDept);
+                String hospitalName = entry.getValue().getHospitalName();
+                if (hospitalName == null) return false;
+                return SPECIALTY_KEYWORDS.stream()
+                        .anyMatch(keyword -> !keyword.equals(departmentName)
+                                && hospitalName.contains(keyword));
             });
         }
 

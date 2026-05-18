@@ -36,7 +36,7 @@ public class CostPredictionService {
     private final CostPredictionRepository         costPredictionRepository;
     private final UserRepository                   userRepository;
 
-    @Transactional
+    @Transactional(noRollbackFor = AuthException.class)
     public CostPredictResponse predict(
             CostPredictRequest req,
             UserProfileDto profile,
