@@ -71,12 +71,12 @@ public class HospitalAgentService {
             5, List.of("01")
     );
 
-    /** 위험도별 검색 반경 (m): 1~2단계 3km, 3~5단계 15km */
+    /** 위험도별 검색 반경 (m): 1~2단계 3km, 3~4단계 10km, 5단계 15km */
     private static final Map<Integer, Integer> RISK_TO_RADIUS = Map.of(
             1, 3000,
             2, 3000,
-            3, 15000,
-            4, 15000,
+            3, 10000,
+            4, 10000,
             5, 15000
     );
 
@@ -198,6 +198,26 @@ public class HospitalAgentService {
             }
         }
 
+        // 모든 clCd 호출 실패 또는 결과 없음 — NPE 및 JPA IN-empty 예외 방지
+        if (merged.isEmpty()) {
+            log.warn("dgsbjtCd={}, riskLevel={}: 모든 clCd 검색 결과 없음", dgsbjtCd, req.getRiskLevel());
+            return HospitalSearchResponse.builder()
+                    .hospitals(List.of())
+                    .pageNo(1)
+                    .numOfRows(0)
+                    .totalCount(0)
+                    .build();
+        }
+
+        // HIRA API 위치검색+dgsbjtCd 병행 시 필터 미적용 대응 — 응답의 dgsbjtCd로 서버 측 재필터
+        if (org.springframework.util.StringUtils.hasText(dgsbjtCd)) {
+            merged.entrySet().removeIf(entry -> {
+                String hospitalDept = entry.getValue().getDgsbjtCd();
+                return org.springframework.util.StringUtils.hasText(hospitalDept)
+                        && !dgsbjtCd.equals(hospitalDept);
+            });
+        }
+
         // 단일 IN 쿼리로 인증 병원 ykiho Set 확보 (N+1 방지)
         Set<String> certifiedYkihos = foreignCertifiedHospitalRepository
                 .findAllByYkihoIn(merged.keySet()) // DB 조히
@@ -218,6 +238,7 @@ public class HospitalAgentService {
                         .hospitalType(dto.getHospitalType())
                         .sidoCd(dto.getSidoCd())
                         .sidoCdNm(dto.getSidoCdNm())
+                        .dgsbjtCd(dto.getDgsbjtCd())
                         .foreignCertified(certifiedYkihos.contains(dto.getYkiho()))  // 병원별 판별
                         .build())
                 .collect(Collectors.toList());

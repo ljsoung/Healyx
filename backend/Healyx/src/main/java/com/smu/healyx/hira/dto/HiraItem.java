@@ -54,4 +54,7 @@ public class HiraItem {
      * region_adjustment 테이블의 region 컬럼과 매칭.
      */
     private String sidoCdNm;
+
+    /** 진료과목코드 — HIRA 응답 항목의 병원 주진료과 코드 (예: "11"=안과, "01"=내과) */
+    private String dgsbjtCd;
 }

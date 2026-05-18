@@ -147,6 +147,7 @@ public class HiraApiService {
                 .hospitalType(item.getClCdNm())
                 .sidoCd(item.getSidoCd())
                 .sidoCdNm(item.getSidoCdNm())
+                .dgsbjtCd(item.getDgsbjtCd())
                 .foreignCertified(false) // DB 연동 완료 후 foreign_certified_hospital 테이블에서 조회
                 .build();
     }

@@ -49,6 +49,9 @@ public class HospitalDto {
      */
     private String sidoCdNm;
 
+    /** 진료과목코드 — HIRA 응답 항목의 병원 주진료과 코드 (예: "11"=안과, "01"=내과) */
+    private String dgsbjtCd;
+
     /**
      * 외국인 환자 유치 인증 병원 여부
      * - foreign_certified_hospital 테이블에서 ykiho 기준으로 조회
