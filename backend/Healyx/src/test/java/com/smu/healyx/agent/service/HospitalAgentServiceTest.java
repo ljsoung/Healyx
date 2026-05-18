@@ -29,20 +29,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * HospitalAgentService 단위 테스트 — 이슈 #62, #63 회귀 방지
+ * HospitalAgentService 단위 테스트 — 2단계 검색 방식 검증
+ *
+ * 2단계 검색 로직:
+ *   1단계: GPS → sidoCd 변환 후 dgsbjtCd + sidoCd + clCd 로 HIRA 전국 조회 (xPos/yPos 없음)
+ *   2단계: Haversine 공식으로 반경 내 병원만 필터링, GPS=0 병원 제외
  *
  * 외부 의존성(GptService, HiraApiService, ForeignCertifiedHospitalRepository)은
- * Mockito Mock으로 격리하고 searchAcrossHospitalTypes 로직을 직접 검증합니다.
+ * Mockito Mock으로 격리합니다.
  *
- * LENIENT strictness: 빈 결과 케이스(TC-3,4,5)에서는 merged가 비어있어
- * foreignCertifiedHospitalRepository 호출이 발생하지 않으므로 lenient로 설정합니다.
+ * LENIENT strictness: TC-5(빈 결과) 등에서 filtered가 비어있어
+ * foreignCertifiedHospitalRepository 호출이 발생하지 않는 케이스 허용.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("HospitalAgentService 단위 테스트 (이슈 #62, #63)")
+@DisplayName("HospitalAgentService 단위 테스트 (2단계 검색 방식)")
 class HospitalAgentServiceTest {
 
     @Mock
@@ -59,6 +65,18 @@ class HospitalAgentServiceTest {
 
     private UserProfileDto guestProfile;
 
+    // 서울 좌표 (SidoCodeResolver → "110000")
+    private static final double SEOUL_LAT = 37.5665;
+    private static final double SEOUL_LON = 126.9780;
+
+    // 반경 내 좌표 (서울 중심에서 약 400m — riskLevel=1의 3000m 안쪽)
+    private static final double NEAR_LAT = 37.5700;
+    private static final double NEAR_LON = 126.9800;
+
+    // 반경 외 좌표 (서울 중심에서 약 15km — riskLevel=1의 3000m 바깥)
+    private static final double FAR_LAT = 37.6500;
+    private static final double FAR_LON = 127.1000;
+
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
@@ -66,134 +84,201 @@ class HospitalAgentServiceTest {
                 gptService, hiraApiService, objectMapper, foreignCertifiedHospitalRepository);
         guestProfile = UserProfileDto.guestDefault();
 
-        // ForeignCertifiedHospitalRepository: 항상 빈 리스트 반환 (외국인 인증 여부는 이 테스트 범위 아님)
+        // ForeignCertifiedHospitalRepository: 기본으로 빈 리스트 반환
         when(foreignCertifiedHospitalRepository.findAllByYkihoIn(anyCollection()))
                 .thenReturn(List.of());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TC-1: dgsbjtCd 후처리 필터 — 일치하는 병원만 남김 (#62)
+    // TC-1: 진료과 코드 기반 HIRA 호출 검증
+    //       - request에 xPos/yPos 없음 (0.0)
+    //       - sidoCd = "110000" (서울)
+    //       - numOfRows = 100
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("TC-1: dgsbjtCd=11(안과) 필터 — 안과 병원만 남고 산부인과(09) 병원은 제거됨 (#62)")
-    void searchAcrossHospitalTypes_dgsbjtCdFilter_keepsMatchingHospitalsOnly() {
-        // given — GPT가 search_hospitals(dgsbjtCd="11") + extract_icd10 두 tool call 반환
-        setupGptMockWithTwoCalls("11", "안과", "H10.1");
-
-        // HIRA API: 안과 병원 1건 + 산부인과 병원 1건 반환
-        HospitalDto eyeHospital = buildHospital("ykiho-eye", "안과병원", "11");
-        HospitalDto obgynHospital = buildHospital("ykiho-obgyn", "산부인과병원", "09");
-        HospitalSearchResponse hiraResponse = buildHiraResponse(eyeHospital, obgynHospital);
-
-        // riskLevel=1 → clCd=[31,21,11,01] 4번 호출 — 모두 같은 응답 반환
-        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
-                .thenReturn(hiraResponse);
-
-        HospitalAssistantRequest req = buildRequest("눈이 충혈됐어요", 1);
-
-        // when
-        HospitalAssistantResponse response = hospitalAgentService.run(req, guestProfile);
-
-        // then — 안과 병원만 포함되어야 함
-        List<HospitalDto> hospitals = response.getHospitals().getHospitals();
-        assertThat(hospitals)
-                .as("dgsbjtCd=11 필터 후 안과 병원만 남아야 함")
-                .extracting(HospitalDto::getYkiho)
-                .containsExactly("ykiho-eye");
-        assertThat(hospitals)
-                .as("산부인과 병원(dgsbjtCd=09)은 제거되어야 함")
-                .extracting(HospitalDto::getYkiho)
-                .doesNotContain("ykiho-obgyn");
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // TC-2: dgsbjtCd=null 병원은 필터 통과 (포용적 정책) (#62)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("TC-2: dgsbjtCd=null 병원은 필터 통과, dgsbjtCd 불일치 병원은 제거됨 (#62 포용적 정책)")
-    void searchAcrossHospitalTypes_nullDgsbjtCdHospital_passesFilter() {
-        // given — GPT: dgsbjtCd="11" 요청
-        setupGptMockWithTwoCalls("11", "안과", "H10.1");
-
-        // HIRA API: dgsbjtCd=null 병원 + dgsbjtCd="09" 병원 반환
-        HospitalDto nullDeptHospital = buildHospital("ykiho-null", "일반병원", null);
-        HospitalDto obgynHospital    = buildHospital("ykiho-obgyn", "산부인과병원", "09");
-        HospitalSearchResponse hiraResponse = buildHiraResponse(nullDeptHospital, obgynHospital);
-
-        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
-                .thenReturn(hiraResponse);
-
-        HospitalAssistantRequest req = buildRequest("눈이 아파요", 1);
-
-        // when
-        HospitalAssistantResponse response = hospitalAgentService.run(req, guestProfile);
-
-        // then — null 병원은 포함, 산부인과는 제거
-        List<HospitalDto> hospitals = response.getHospitals().getHospitals();
-        assertThat(hospitals)
-                .as("dgsbjtCd=null 병원은 포용적 정책에 따라 필터를 통과해야 함")
-                .extracting(HospitalDto::getYkiho)
-                .contains("ykiho-null");
-        assertThat(hospitals)
-                .as("dgsbjtCd=09 병원은 요청 코드 11과 불일치하므로 제거되어야 함")
-                .extracting(HospitalDto::getYkiho)
-                .doesNotContain("ykiho-obgyn");
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // TC-3: riskLevel=3 → 반경 10000m (#63 수정 검증)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("TC-3: riskLevel=3 요청 시 HIRA API 반경이 10000m이어야 함 (#63 수정 — 기존 15000 → 10000)")
-    void searchAcrossHospitalTypes_riskLevel3_usesRadius10000() {
+    @DisplayName("TC-1: HIRA 호출 시 sidoCd=110000, xPos/yPos=0.0, numOfRows=100 검증")
+    void searchHospitals_hiraRequest_hasSidoCdAndNoGpsParams() {
         // given
-        setupGptMockWithTwoCalls("01", "내과", "J06.9");
+        setupGptMock("11", "안과", "H10.1");
+
+        HospitalDto nearHospital = buildHospital("ykiho-001", "안과의원", "11", NEAR_LAT, NEAR_LON);
+        HospitalSearchResponse hiraResp = buildHiraResponse(1, nearHospital);
 
         when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
-                .thenReturn(emptyHiraResponse());
+                .thenReturn(hiraResp);
 
-        HospitalAssistantRequest req = buildRequest("배가 아파요", 3);
+        HospitalAssistantRequest req = buildRequest("눈이 충혈됐어요", 1, SEOUL_LAT, SEOUL_LON);
 
         // when
         hospitalAgentService.run(req, guestProfile);
 
-        // then — 모든 HIRA 호출에서 radius=10000 이어야 함
+        // then — HIRA 요청 파라미터 검증
         ArgumentCaptor<HospitalSearchRequest> captor =
                 ArgumentCaptor.forClass(HospitalSearchRequest.class);
-        org.mockito.Mockito.verify(hiraApiService, org.mockito.Mockito.atLeastOnce())
-                .searchHospitals(captor.capture());
+        verify(hiraApiService, atLeastOnce()).searchHospitals(captor.capture());
 
-        captor.getAllValues().forEach(searchReq ->
-                assertThat(searchReq.getRadius())
-                        .as("riskLevel=3의 반경은 10000m이어야 함 (기존 버그: 15000)")
-                        .isEqualTo(10000));
+        HospitalSearchRequest captured = captor.getAllValues().get(0);
+        assertThat(captured.getDgsbjtCd())
+                .as("dgsbjtCd는 GPT가 반환한 '11' 이어야 함")
+                .isEqualTo("11");
+        assertThat(captured.getSidoCd())
+                .as("서울 좌표 → sidoCd=110000 이어야 함")
+                .isEqualTo("110000");
+        assertThat(captured.getXPos())
+                .as("2단계 방식: xPos는 0.0 (위치 파라미터 없음)")
+                .isEqualTo(0.0);
+        assertThat(captured.getYPos())
+                .as("2단계 방식: yPos는 0.0 (위치 파라미터 없음)")
+                .isEqualTo(0.0);
+        assertThat(captured.getNumOfRows())
+                .as("numOfRows는 100이어야 함")
+                .isEqualTo(100);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TC-4: merged 빈 리스트 — 500 없이 빈 응답 반환 (#63)
+    // TC-2: Haversine 반경 필터링 — 반경 내 병원만 포함
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("TC-4: 모든 HIRA 호출이 빈 결과일 때 500 예외 없이 빈 리스트 응답 반환 (#63)")
-    void searchAcrossHospitalTypes_emptyHiraResult_returnsEmptyListWithoutException() {
-        // given — 모든 clCd에 대해 빈 리스트 반환
-        setupGptMockWithTwoCalls("12", "이비인후과", "J30.1");
+    @DisplayName("TC-2: Haversine 필터 — 반경 3000m 내 병원만 포함, 반경 외 병원 제외")
+    void searchHospitals_haversineFilter_keepsOnlyNearbyHospitals() {
+        // given
+        setupGptMock("11", "안과", "H10.1");
+
+        HospitalDto nearHospital = buildHospital("ykiho-near", "근처안과", "11", NEAR_LAT, NEAR_LON);
+        HospitalDto farHospital  = buildHospital("ykiho-far",  "먼안과",   "11", FAR_LAT,  FAR_LON);
+        HospitalSearchResponse hiraResp = buildHiraResponse(2, nearHospital, farHospital);
 
         when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
-                .thenReturn(emptyHiraResponse());
+                .thenReturn(hiraResp);
 
-        HospitalAssistantRequest req = buildRequest("코가 막혀요", 1);
+        HospitalAssistantRequest req = buildRequest("눈이 아파요", 1, SEOUL_LAT, SEOUL_LON);
 
-        // when & then — 예외 없이 정상 실행
+        // when
+        HospitalAssistantResponse response = hospitalAgentService.run(req, guestProfile);
+
+        // then
+        List<HospitalDto> hospitals = response.getHospitals().getHospitals();
+        assertThat(hospitals)
+                .as("반경 내 병원(ykiho-near)만 포함되어야 함")
+                .extracting(HospitalDto::getYkiho)
+                .contains("ykiho-near");
+        assertThat(hospitals)
+                .as("반경 외 병원(ykiho-far)은 제외되어야 함")
+                .extracting(HospitalDto::getYkiho)
+                .doesNotContain("ykiho-far");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TC-3: GPS 없는 병원 제외 (lat=0.0, lon=0.0)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("TC-3: GPS 없는 병원(lat=0.0, lon=0.0)은 응답에서 제외됨")
+    void searchHospitals_noGpsHospital_isExcluded() {
+        // given
+        setupGptMock("11", "안과", "H10.1");
+
+        HospitalDto validHospital  = buildHospital("ykiho-valid", "정상안과", "11", NEAR_LAT, NEAR_LON);
+        HospitalDto noGpsHospital  = buildHospital("ykiho-nogps", "GPS없는병원", "11", 0.0, 0.0);
+        HospitalSearchResponse hiraResp = buildHiraResponse(2, validHospital, noGpsHospital);
+
+        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
+                .thenReturn(hiraResp);
+
+        HospitalAssistantRequest req = buildRequest("눈이 충혈됐어요", 1, SEOUL_LAT, SEOUL_LON);
+
+        // when
+        HospitalAssistantResponse response = hospitalAgentService.run(req, guestProfile);
+
+        // then
+        List<HospitalDto> hospitals = response.getHospitals().getHospitals();
+        assertThat(hospitals)
+                .as("GPS 없는 병원(lat=0.0, lon=0.0)은 제외되어야 함")
+                .extracting(HospitalDto::getYkiho)
+                .doesNotContain("ykiho-nogps");
+        assertThat(hospitals)
+                .as("GPS 있는 정상 병원은 포함되어야 함")
+                .extracting(HospitalDto::getYkiho)
+                .contains("ykiho-valid");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TC-4: 페이지네이션 — totalCount > 100 시 2페이지 호출
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("TC-4: totalCount=200 일 때 pageNo=1, pageNo=2 각각 호출됨")
+    void searchHospitals_pagination_callsPage1AndPage2() {
+        // given
+        setupGptMock("11", "안과", "H10.1");
+
+        // 1페이지: totalCount=200 (2페이지 필요)
+        HospitalDto hospital1 = buildHospital("ykiho-p1", "1페이지병원", "11", NEAR_LAT, NEAR_LON);
+        HospitalSearchResponse page1Resp = HospitalSearchResponse.builder()
+                .hospitals(List.of(hospital1))
+                .pageNo(1)
+                .numOfRows(100)
+                .totalCount(200)
+                .build();
+
+        // 2페이지: totalCount=200 (이 페이지로 종료)
+        HospitalDto hospital2 = buildHospital("ykiho-p2", "2페이지병원", "11", NEAR_LAT, NEAR_LON);
+        HospitalSearchResponse page2Resp = HospitalSearchResponse.builder()
+                .hospitals(List.of(hospital2))
+                .pageNo(2)
+                .numOfRows(100)
+                .totalCount(200)
+                .build();
+
+        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
+                .thenReturn(page1Resp)  // 첫 번째 clCd, 1페이지
+                .thenReturn(page2Resp)  // 첫 번째 clCd, 2페이지
+                .thenReturn(emptyHiraResponse()); // 나머지 clCd들
+
+        HospitalAssistantRequest req = buildRequest("눈이 아파요", 1, SEOUL_LAT, SEOUL_LON);
+
+        // when
+        hospitalAgentService.run(req, guestProfile);
+
+        // then — pageNo=1, pageNo=2 각각 호출되었는지 확인
+        ArgumentCaptor<HospitalSearchRequest> captor =
+                ArgumentCaptor.forClass(HospitalSearchRequest.class);
+        verify(hiraApiService, atLeastOnce()).searchHospitals(captor.capture());
+
+        List<Integer> pageNos = captor.getAllValues().stream()
+                .map(HospitalSearchRequest::getPageNo)
+                .toList();
+        assertThat(pageNos)
+                .as("페이지네이션: pageNo=1, pageNo=2 모두 호출되어야 함")
+                .contains(1, 2);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TC-5: empty guard — 반경 내 병원 0건 시 빈 목록 반환 (예외 없음)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("TC-5: HIRA가 반경 외 병원만 반환할 때 빈 목록 반환, 예외 없음")
+    void searchHospitals_allOutsideRadius_returnsEmptyWithoutException() {
+        // given
+        setupGptMock("11", "안과", "H10.1");
+
+        // 반경 외 병원만 반환 (FAR_LAT, FAR_LON)
+        HospitalDto farHospital = buildHospital("ykiho-far", "먼병원", "11", FAR_LAT, FAR_LON);
+        HospitalSearchResponse hiraResp = buildHiraResponse(1, farHospital);
+
+        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
+                .thenReturn(hiraResp);
+
+        HospitalAssistantRequest req = buildRequest("눈이 아파요", 1, SEOUL_LAT, SEOUL_LON);
+
+        // when & then — 예외 없이 정상 실행, 빈 목록 반환
         assertThatNoException().isThrownBy(() -> {
             HospitalAssistantResponse response = hospitalAgentService.run(req, guestProfile);
-
-            // 빈 리스트 응답 검증
             assertThat(response.getHospitals().getHospitals())
-                    .as("결과 없을 때 빈 리스트를 반환해야 함")
+                    .as("반경 외 병원만 있을 때 빈 목록을 반환해야 함")
                     .isEmpty();
             assertThat(response.getHospitals().getTotalCount())
                     .as("totalCount는 0이어야 함")
@@ -202,72 +287,33 @@ class HospitalAgentServiceTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // TC-5: riskLevel=5 → 반경 15000m (#63 — 5단계는 그대로 유지)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("TC-5: riskLevel=5 요청 시 HIRA API 반경이 15000m이어야 함 (#63 — 5단계 유지 확인)")
-    void searchAcrossHospitalTypes_riskLevel5_usesRadius15000() {
-        // given — riskLevel=5: clCd=["01"] 1번만 호출
-        setupGptMockWithTwoCalls("21", "응급의학과", "T07");
-
-        when(hiraApiService.searchHospitals(any(HospitalSearchRequest.class)))
-                .thenReturn(emptyHiraResponse());
-
-        HospitalAssistantRequest req = buildRequest("심한 가슴 통증", 5);
-
-        // when
-        hospitalAgentService.run(req, guestProfile);
-
-        // then
-        ArgumentCaptor<HospitalSearchRequest> captor =
-                ArgumentCaptor.forClass(HospitalSearchRequest.class);
-        org.mockito.Mockito.verify(hiraApiService, org.mockito.Mockito.atLeastOnce())
-                .searchHospitals(captor.capture());
-
-        captor.getAllValues().forEach(searchReq ->
-                assertThat(searchReq.getRadius())
-                        .as("riskLevel=5의 반경은 15000m이어야 함")
-                        .isEqualTo(15000));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // 헬퍼 메서드
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * GPT가 두 번 호출되는 상황을 Mock으로 설정합니다.
-     *   1회차: tool_calls=[search_hospitals(dgsbjtCd, departmentName), extract_icd10(icd10Code)]
-     *   2회차: finish_reason="stop"
+     * GPT가 두 tool call(search_hospitals + extract_icd10)을 한 번에 반환하는 Mock 설정.
+     *   1회차: tool_calls 반환
+     *   2회차: stop 반환
      */
-    private void setupGptMockWithTwoCalls(String dgsbjtCd, String departmentName, String icd10Code) {
-        // search_hospitals tool call
+    private void setupGptMock(String dgsbjtCd, String departmentName, String icd10Code) {
         GptToolCall searchCall = makeToolCall(
                 "call-search-001",
                 "search_hospitals",
                 String.format("{\"dgsbjtCd\":\"%s\",\"departmentName\":\"%s\"}", dgsbjtCd, departmentName));
 
-        // extract_icd10_code tool call
         GptToolCall icd10Call = makeToolCall(
                 "call-icd10-002",
                 "extract_icd10_code",
                 String.format("{\"icd10Code\":\"%s\"}", icd10Code));
 
-        // 1회차: tool_calls 반환
         GptChatResponse firstResponse = makeToolCallsResponse(List.of(searchCall, icd10Call));
-
-        // 2회차: stop 반환 (Loop 종료)
-        GptChatResponse stopResponse = makeStopResponse();
+        GptChatResponse stopResponse  = makeStopResponse();
 
         when(gptService.callChatCompletion(any()))
                 .thenReturn(firstResponse)
                 .thenReturn(stopResponse);
     }
 
-    /**
-     * GptToolCall 인스턴스를 ReflectionTestUtils로 생성합니다.
-     * GptToolCall은 @NoArgsConstructor만 제공하므로 리플렉션으로 필드를 설정합니다.
-     */
     private GptToolCall makeToolCall(String id, String functionName, String arguments) {
         GptToolCall toolCall = new GptToolCall();
         ReflectionTestUtils.setField(toolCall, "id", id);
@@ -281,9 +327,6 @@ class HospitalAgentServiceTest {
         return toolCall;
     }
 
-    /**
-     * finish_reason="tool_calls" 인 GptChatResponse를 생성합니다.
-     */
     private GptChatResponse makeToolCallsResponse(List<GptToolCall> toolCalls) {
         GptChatResponse response = new GptChatResponse();
 
@@ -300,9 +343,6 @@ class HospitalAgentServiceTest {
         return response;
     }
 
-    /**
-     * finish_reason="stop" 인 GptChatResponse를 생성합니다.
-     */
     private GptChatResponse makeStopResponse() {
         GptChatResponse response = new GptChatResponse();
 
@@ -319,15 +359,16 @@ class HospitalAgentServiceTest {
         return response;
     }
 
-    private HospitalDto buildHospital(String ykiho, String name, String dgsbjtCd) {
+    private HospitalDto buildHospital(String ykiho, String name, String dgsbjtCd,
+                                      double lat, double lon) {
         return HospitalDto.builder()
                 .ykiho(ykiho)
                 .hospitalName(name)
-                .address("서울시 강남구")
+                .address("서울시 중구")
                 .telephone("02-0000-0000")
-                .longitude(127.0276)
-                .latitude(37.4979)
-                .distance(500)
+                .longitude(lon)
+                .latitude(lat)
+                .distance(0)
                 .clCd("31")
                 .hospitalType("의원")
                 .sidoCd("110000")
@@ -337,12 +378,13 @@ class HospitalAgentServiceTest {
                 .build();
     }
 
-    private HospitalSearchResponse buildHiraResponse(HospitalDto... hospitals) {
+    /** totalCount를 명시적으로 지정하는 빌더 */
+    private HospitalSearchResponse buildHiraResponse(int totalCount, HospitalDto... hospitals) {
         return HospitalSearchResponse.builder()
                 .hospitals(List.of(hospitals))
                 .pageNo(1)
                 .numOfRows(hospitals.length)
-                .totalCount(hospitals.length)
+                .totalCount(totalCount)
                 .build();
     }
 
@@ -355,7 +397,8 @@ class HospitalAgentServiceTest {
                 .build();
     }
 
-    private HospitalAssistantRequest buildRequest(String symptom, int riskLevel) {
-        return HospitalAssistantRequest.of(symptom, riskLevel, 37.4979, 127.0276);
+    private HospitalAssistantRequest buildRequest(String symptom, int riskLevel,
+                                                   double lat, double lon) {
+        return HospitalAssistantRequest.of(symptom, riskLevel, lat, lon);
     }
 }

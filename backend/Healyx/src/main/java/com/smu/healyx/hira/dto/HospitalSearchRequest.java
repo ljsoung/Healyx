@@ -35,6 +35,13 @@ public class HospitalSearchRequest {
     /** 검색 반경 (단위: m, 위험도에 따른 반경 나누어 기입) */
     private int radius;
 
+    /**
+     * 시도코드 (HIRA sidoCd, 6자리, 예: "110000" = 서울).
+     * 2단계 검색 시 SidoCodeResolver로 GPS → sidoCd 변환 후 세팅.
+     * null 또는 빈 문자열이면 buildUri()에서 파라미터 제외(전국 조회 fallback).
+     */
+    private String sidoCd;
+
     /** 페이지 번호 (기본 1) */
     private int pageNo = 1;
 

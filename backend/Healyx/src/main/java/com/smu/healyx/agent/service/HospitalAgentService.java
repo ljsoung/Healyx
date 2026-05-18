@@ -13,7 +13,11 @@ import com.smu.healyx.gpt.service.GptService;
 import com.smu.healyx.hira.dto.HospitalDto;
 import com.smu.healyx.hira.dto.HospitalSearchRequest;
 import com.smu.healyx.hira.dto.HospitalSearchResponse;
+import com.smu.healyx.hira.service.HiraDgsbjtCacheService;
 import com.smu.healyx.hira.service.HiraApiService;
+import com.smu.healyx.hira.util.DepartmentNameMatcher;
+import com.smu.healyx.hira.util.HaversineUtils;
+import com.smu.healyx.hira.util.SidoCodeResolver;
 import com.smu.healyx.hospital.domain.ForeignCertifiedHospital;
 import com.smu.healyx.hospital.repository.ForeignCertifiedHospitalRepository;
 import com.smu.healyx.user.dto.UserProfileDto;
@@ -22,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -44,26 +50,17 @@ public class HospitalAgentService {
 
     private final GptService gptService;
     private final HiraApiService hiraApiService;
+    private final HiraDgsbjtCacheService hiraDgsbjtCacheService;
     private final ObjectMapper objectMapper;
-    private final
-    ForeignCertifiedHospitalRepository foreignCertifiedHospitalRepository;
+    private final ForeignCertifiedHospitalRepository foreignCertifiedHospitalRepository;
+    // 빈 이름 "dgsbjtVerifyExecutor"와 필드명 일치 → Spring @Primary 없이 단독 Executor 빈으로 주입됨
+    private final Executor dgsbjtVerifyExecutor;
 
     private static final String AGENT_MODEL = "gpt-4o";
     private static final int MAX_ITERATIONS = 6;
 
     private static final String TOOL_SEARCH_HOSPITALS = "search_hospitals";
     private static final String TOOL_EXTRACT_ICD10    = "extract_icd10_code";
-
-    /**
-     * 병원 이름에 포함될 수 있는 한국 진료과 키워드.
-     * HIRA API가 응답 아이템에 dgsbjtCd를 미반환하는 경우 이름 기반 필터에 사용.
-     */
-    private static final List<String> SPECIALTY_KEYWORDS = List.of(
-            "안과", "이비인후과", "산부인과", "정형외과", "내과", "외과",
-            "피부과", "비뇨기과", "비뇨의학과", "소아과", "소아청소년과",
-            "신경과", "신경외과", "정신과", "정신건강의학과", "치과",
-            "흉부외과", "재활의학과", "가정의학과", "응급의학과"
-    );
 
     /**
      * 위험도별 병원 종별 범위 (낮은 단계일수록 더 많은 종별 포함)
@@ -135,7 +132,7 @@ public class HospitalAgentService {
                         departmentName = args.path("departmentName").asText();
 
                         // clCd 범위·반경은 위험도 기반 서버 로직으로 결정
-                        hospitals = searchAcrossHospitalTypes(departmentCode, departmentName, req);
+                        hospitals = searchAcrossHospitalTypes(departmentCode, req);
 
                         String result = objectMapper.writeValueAsString(
                                 Map.of("success", true, "totalCount", hospitals.getTotalCount()));
@@ -178,40 +175,57 @@ public class HospitalAgentService {
     // ── 다중 병원 종별 HIRA 호출 + 병합 ───────────────────────────────
 
     /**
-     * 위험도에 해당하는 clCd 목록 각각에 대해 HIRA API를 순차 호출하고
-     * ykiho 기준으로 중복을 제거한 뒤 병합합니다.
+     * 2단계 검색:
+     *   1단계 — GPS → sidoCd 변환 후 진료과(dgsbjtCd) + 시도(sidoCd) + 종별(clCd)로 HIRA 전국 조회
+     *   2단계 — Haversine 공식으로 반경 내 병원만 필터링, distance 값 갱신
+     *
+     * 이름 기반 진료과 필터(SPECIALTY_KEYWORDS)는 제거됨.
+     * sidoCd 매칭 실패 시 sidoCd 없이 호출(전국 fallback) → Haversine 필터는 그대로 동작.
      */
     private HospitalSearchResponse searchAcrossHospitalTypes(
-            String dgsbjtCd, String departmentName, HospitalAssistantRequest req) {
+            String dgsbjtCd, HospitalAssistantRequest req) {
 
         List<String> clCds = RISK_TO_CL_CDS.getOrDefault(req.getRiskLevel(), List.of("31", "21", "11", "01"));
         int radius         = RISK_TO_RADIUS.getOrDefault(req.getRiskLevel(), 3000);
 
+        // GPS → sidoCd 변환 (경계 지역 등 매칭 실패 시 null → 전국 조회 fallback)
+        String sidoCd = SidoCodeResolver.resolve(req.getLatitude(), req.getLongitude());
+        if (sidoCd == null) {
+            log.warn("sidoCd 매칭 실패 (lat={}, lon={}) → 전국 조회 fallback", req.getLatitude(), req.getLongitude());
+        } else {
+            log.debug("sidoCd 결정: {} (lat={}, lon={})", sidoCd, req.getLatitude(), req.getLongitude());
+        }
+
         // LinkedHashMap으로 삽입 순서(종별 우선순위) 유지하면서 ykiho 중복 제거
         Map<String, HospitalDto> merged = new LinkedHashMap<>();
-        int totalCount = 0;
 
         for (String clCd : clCds) {
-            try {
-                HospitalSearchRequest searchReq = buildSearchRequest(dgsbjtCd, clCd, radius, req);
-                HospitalSearchResponse result   = hiraApiService.searchHospitals(searchReq);
+            int maxPage = 5;
+            for (int page = 1; page <= maxPage; page++) {
+                try {
+                    HospitalSearchRequest searchReq = buildSearchRequest(dgsbjtCd, clCd, sidoCd, page, 100);
+                    HospitalSearchResponse result   = hiraApiService.searchHospitals(searchReq);
 
-                totalCount += result.getTotalCount();
-                for (HospitalDto hospital : result.getHospitals()) {
-                    if (hospital.getYkiho() != null) {
-                        merged.putIfAbsent(hospital.getYkiho(), hospital);
+                    for (HospitalDto hospital : result.getHospitals()) {
+                        if (hospital.getYkiho() != null) {
+                            merged.putIfAbsent(hospital.getYkiho(), hospital);
+                        }
                     }
-                }
-                log.debug("HIRA 조회: clCd={}, 건수={}", clCd, result.getTotalCount());
+                    log.debug("HIRA 조회: clCd={}, page={}, 건수={}", clCd, page, result.getTotalCount());
 
-            } catch (Exception e) {
-                log.warn("clCd={} 병원 검색 실패 (건너뜀): {}", clCd, e.getMessage());
+                    // 다음 페이지 없으면 종료
+                    if (result.getTotalCount() <= page * 100) break;
+
+                } catch (Exception e) {
+                    log.warn("HIRA 호출 실패 (clCd={}, page={}): {}", clCd, page, e.getMessage());
+                    break;
+                }
             }
         }
 
         // 모든 clCd 호출 실패 또는 결과 없음 — NPE 및 JPA IN-empty 예외 방지
         if (merged.isEmpty()) {
-            log.warn("dgsbjtCd={}, riskLevel={}: 모든 clCd 검색 결과 없음", dgsbjtCd, req.getRiskLevel());
+            log.warn("2단계 검색 결과 없음 (dgsbjtCd={}, sidoCd={})", dgsbjtCd, sidoCd);
             return HospitalSearchResponse.builder()
                     .hospitals(List.of())
                     .pageNo(1)
@@ -220,27 +234,137 @@ public class HospitalAgentService {
                     .build();
         }
 
-        // HIRA API가 응답 아이템에 dgsbjtCd를 미반환하므로 병원 이름 기반으로 재필터.
-        // 한국 의원은 이름에 진료과를 포함하는 것이 관행이므로 다른 진료과 키워드 포함 시 제거.
-        // 대형병원(clCd 01·11·21)은 다진료과 운영으로 이름에 과명이 없어 포용적 통과.
-        if (org.springframework.util.StringUtils.hasText(departmentName)) {
-            merged.entrySet().removeIf(entry -> {
-                String hospitalName = entry.getValue().getHospitalName();
-                if (hospitalName == null) return false;
-                return SPECIALTY_KEYWORDS.stream()
-                        .anyMatch(keyword -> !keyword.equals(departmentName)
-                                && hospitalName.contains(keyword));
-            });
+        // Haversine 반경 필터링 + distance 값 갱신
+        double userLat = req.getLatitude();
+        double userLon = req.getLongitude();
+
+        Map<String, HospitalDto> filtered = new LinkedHashMap<>();
+        for (Map.Entry<String, HospitalDto> entry : merged.entrySet()) {
+            HospitalDto dto = entry.getValue();
+            // GPS 좌표 없는 병원 제외
+            if (dto.getLatitude() == 0.0 || dto.getLongitude() == 0.0) continue;
+
+            double distM = HaversineUtils.distanceMeters(
+                    userLat, userLon, dto.getLatitude(), dto.getLongitude());
+
+            if (distM <= radius) {
+                // distance 필드를 Haversine 계산값(m)으로 교체한 새 DTO 생성
+                HospitalDto updated = HospitalDto.builder()
+                        .ykiho(dto.getYkiho())
+                        .hospitalName(dto.getHospitalName())
+                        .address(dto.getAddress())
+                        .telephone(dto.getTelephone())
+                        .longitude(dto.getLongitude())
+                        .latitude(dto.getLatitude())
+                        .distance((int) Math.round(distM))
+                        .clCd(dto.getClCd())
+                        .hospitalType(dto.getHospitalType())
+                        .sidoCd(dto.getSidoCd())
+                        .sidoCdNm(dto.getSidoCdNm())
+                        .dgsbjtCd(dto.getDgsbjtCd())
+                        .foreignCertified(false) // 아래 DB 조회 후 갱신
+                        .build();
+                filtered.put(entry.getKey(), updated);
+            }
         }
+
+        // 반경 내 결과 없음
+        if (filtered.isEmpty()) {
+            log.warn("반경 {}m 내 병원 없음 (dgsbjtCd={}, lat={}, lon={})",
+                    radius, dgsbjtCd, userLat, userLon);
+            return HospitalSearchResponse.builder()
+                    .hospitals(List.of())
+                    .pageNo(1)
+                    .numOfRows(0)
+                    .totalCount(0)
+                    .build();
+        }
+
+        // ── dgsbjt 진료과 검증 ────────────────────────────────────────────────
+        // 종합병원(clCd=11) / 상급종합(clCd=01): 모든 진료과 보유 가정 → 검증 면제
+        // 의원(clCd=31) / 병원(clCd=21): HIRA getDgsbjtInfo 호출(현재 비활성) 또는 이름 기반 fallback으로 검증
+        Map<String, HospitalDto> verified = new LinkedHashMap<>();
+        List<CompletableFuture<Map.Entry<String, Boolean>>> futures = new ArrayList<>();
+        // filtered 삽입 순서를 유지하기 위한 순서 인덱스
+        List<String> orderedYkihos = new ArrayList<>(filtered.keySet());
+
+        for (String ykiho : orderedYkihos) {
+            HospitalDto dto = filtered.get(ykiho);
+            String clCd = dto.getClCd();
+
+            // 종합병원·상급종합 → 검증 면제 즉시 통과
+            if ("01".equals(clCd) || "11".equals(clCd)) {
+                verified.put(ykiho, dto);
+                continue;
+            }
+
+            // 의원·병원 → 비동기 검증 (HIRA or 이름 기반 fallback)
+            final String finalYkiho = ykiho;
+            final HospitalDto finalDto = dto;
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                Set<String> codes = hiraDgsbjtCacheService.getOrFetch(finalYkiho);
+                boolean pass;
+                if (codes.isEmpty()) {
+                    // fallback: 이름 기반 strict 매칭 (API 미신청 또는 빈 응답 시 동작)
+                    pass = DepartmentNameMatcher.matches(finalDto.getHospitalName(), dgsbjtCd);
+                    log.debug("dgsbjt 이름 기반 fallback: ykiho={}, yadmNm={}, dgsbjtCd={}, pass={}",
+                            finalYkiho, finalDto.getHospitalName(), dgsbjtCd, pass);
+                } else {
+                    pass = codes.contains(dgsbjtCd);
+                    log.debug("dgsbjt 코드 기반 검증: ykiho={}, codes={}, dgsbjtCd={}, pass={}",
+                            finalYkiho, codes, dgsbjtCd, pass);
+                }
+                return Map.entry(finalYkiho, pass);
+            }, dgsbjtVerifyExecutor));
+        }
+
+        // 비동기 결과 수집 — 삽입 순서 보존을 위해 futures 먼저 전부 resolve 후 orderedYkihos 순서로 채움
+        Map<String, Boolean> verifyResults = new HashMap<>();
+        for (CompletableFuture<Map.Entry<String, Boolean>> future : futures) {
+            try {
+                Map.Entry<String, Boolean> result = future.join();
+                verifyResults.put(result.getKey(), result.getValue());
+            } catch (Exception e) {
+                log.warn("dgsbjt 검증 비동기 처리 실패: {}", e.getMessage());
+                // 실패 시 해당 병원 제외 (false positive 방지)
+            }
+        }
+
+        // verified 맵에 통과한 병원만 삽입 (orderedYkihos 순서로 순회 → 삽입 순서 유지)
+        for (String ykiho : orderedYkihos) {
+            HospitalDto dto = filtered.get(ykiho);
+            String clCd = dto.getClCd();
+            // 종합·상급종합은 이미 verified에 추가됨 → skip
+            if ("01".equals(clCd) || "11".equals(clCd)) continue;
+            // 비동기 검증 통과한 병원만 추가
+            if (Boolean.TRUE.equals(verifyResults.get(ykiho))) {
+                verified.put(ykiho, dto);
+            }
+        }
+
+        log.debug("dgsbjt 검증 완료: filtered={}, verified={}", filtered.size(), verified.size());
+
+        // verified가 비어있어도 빈 응답 반환 (진료과 불일치로 전부 제외된 케이스)
+        if (verified.isEmpty()) {
+            log.warn("dgsbjt 검증 후 병원 없음 (dgsbjtCd={}, lat={}, lon={})",
+                    dgsbjtCd, userLat, userLon);
+            return HospitalSearchResponse.builder()
+                    .hospitals(List.of())
+                    .pageNo(1)
+                    .numOfRows(0)
+                    .totalCount(0)
+                    .build();
+        }
+        // ── dgsbjt 검증 완료 ──────────────────────────────────────────────────
 
         // 단일 IN 쿼리로 인증 병원 ykiho Set 확보 (N+1 방지)
         Set<String> certifiedYkihos = foreignCertifiedHospitalRepository
-                .findAllByYkihoIn(merged.keySet()) // DB 조히
+                .findAllByYkihoIn(verified.keySet())
                 .stream()
                 .map(ForeignCertifiedHospital::getYkiho)
                 .collect(Collectors.toSet());
 
-        List<HospitalDto> hospitals = merged.values().stream()
+        List<HospitalDto> hospitals = verified.values().stream()
                 .map(dto -> HospitalDto.builder()
                         .ykiho(dto.getYkiho())
                         .hospitalName(dto.getHospitalName())
@@ -254,14 +378,15 @@ public class HospitalAgentService {
                         .sidoCd(dto.getSidoCd())
                         .sidoCdNm(dto.getSidoCdNm())
                         .dgsbjtCd(dto.getDgsbjtCd())
-                        .foreignCertified(certifiedYkihos.contains(dto.getYkiho()))  // 병원별 판별
+                        .foreignCertified(certifiedYkihos.contains(dto.getYkiho()))
                         .build())
                 .collect(Collectors.toList());
+
         return HospitalSearchResponse.builder()
                 .hospitals(hospitals)
                 .pageNo(1)
                 .numOfRows(hospitals.size())
-                .totalCount(totalCount)
+                .totalCount(hospitals.size())
                 .build();
     }
 
@@ -343,15 +468,20 @@ public class HospitalAgentService {
 
     // ── HIRA 검색 요청 생성 ───────────────────────────────────────────
 
+    /**
+     * 2단계 검색용 HIRA 요청 객체 생성.
+     * xPos/yPos/radius는 세팅하지 않으므로 buildUri()에서 자동 제외됨.
+     * sidoCd가 null이면 필드도 null로 유지 → buildUri()에서 파라미터 제외(전국 fallback).
+     */
     private HospitalSearchRequest buildSearchRequest(
-            String dgsbjtCd, String clCd, int radius, HospitalAssistantRequest req) {
+            String dgsbjtCd, String clCd, String sidoCd, int pageNo, int numOfRows) {
 
         HospitalSearchRequest r = new HospitalSearchRequest();
         r.setDgsbjtCd(dgsbjtCd);
         r.setClCd(clCd);
-        r.setXPos(req.getLongitude());
-        r.setYPos(req.getLatitude());
-        r.setRadius(radius);
+        r.setSidoCd(sidoCd);
+        r.setPageNo(pageNo);
+        r.setNumOfRows(numOfRows);
         return r;
     }
 }
