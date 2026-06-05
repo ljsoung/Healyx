@@ -1,0 +1,73 @@
+{
+  "samples": [
+    { "id": "H-PROF-01", "label": "HARMFUL", "category": "PROFANITY",      "title": null, "content": "이 병원 의사 진짜 ㅅㅂ 미친 거 아니냐 환자 무시하는 태도 보소" },
+    { "id": "H-PROF-02", "label": "HARMFUL", "category": "PROFANITY",      "title": null, "content": "예약 시스템 만든 놈 진짜 ㅈㄴ 멍청해서 화가 난다" },
+    { "id": "H-PROF-03", "label": "HARMFUL", "category": "PROFANITY",      "title": null, "content": "야 이 ㄱㅅㄲ들아 환불 처리 빨리 안해주냐 진짜 짜증나" },
+    { "id": "H-PROF-04", "label": "HARMFUL", "category": "PROFANITY",      "title": null, "content": "병원 카운터 직원이 ㅂㅅ 같아서 다시는 안 간다 죽어라" },
+    { "id": "H-PROF-05", "label": "HARMFUL", "category": "PROFANITY",      "title": null, "content": "you fucking morons run the worst clinic ever, go to hell every single one of you" },
+
+    { "id": "H-HATE-01", "label": "HARMFUL", "category": "HATE",           "title": null, "content": "외국인들은 다 가짜 환자라 한국에서 꺼지면 좋겠다 의료보험 도둑들" },
+    { "id": "H-HATE-02", "label": "HARMFUL", "category": "HATE",           "title": null, "content": "중국인은 더럽고 병균만 옮기니까 우리 병원에 오지도 마라" },
+    { "id": "H-HATE-03", "label": "HARMFUL", "category": "HATE",           "title": null, "content": "조선족 새끼들은 의료보험 빨아먹는 기생충들이라 강제 추방해야 한다" },
+    { "id": "H-HATE-04", "label": "HARMFUL", "category": "HATE",           "title": null, "content": "흑인들이 진료 받으러 오면 다른 환자들이 다 도망간다 따로 시간 정해라" },
+    { "id": "H-HATE-05", "label": "HARMFUL", "category": "HATE",           "title": null, "content": "Foreigners are stealing our healthcare, go back to your country you parasites" },
+
+    { "id": "H-SPAM-01", "label": "HARMFUL", "category": "SPAM",           "title": null, "content": "★100% 무료 다이어트 약 지급★ 카톡 friend123 추가하시면 바로 보내드립니다" },
+    { "id": "H-SPAM-02", "label": "HARMFUL", "category": "SPAM",           "title": null, "content": "비트코인 일주일에 5배 수익 보장합니다 텔레그램 @coin_bot 으로 DM 주세요" },
+    { "id": "H-SPAM-03", "label": "HARMFUL", "category": "SPAM",           "title": null, "content": "재택부업 월 500만원 보장 자세한 내용은 링크 클릭 https://promo.example.com/job" },
+    { "id": "H-SPAM-04", "label": "HARMFUL", "category": "SPAM",           "title": null, "content": "성인용품 30% 할인 이벤트 www.adultshop-example.com 방문하시면 무료 배송" },
+    { "id": "H-SPAM-05", "label": "HARMFUL", "category": "SPAM",           "title": null, "content": "Congratulations lucky winner you got $5000 prize, click here to claim now -> bit.ly/xyz123" },
+
+    { "id": "H-MISI-01", "label": "HARMFUL", "category": "MISINFORMATION", "title": null, "content": "이 한방 약 한 알이면 모든 암이 100% 완치됩니다 의사들이 숨기고 있어요 안 먹으면 손해" },
+    { "id": "H-MISI-02", "label": "HARMFUL", "category": "MISINFORMATION", "title": null, "content": "코로나 백신 맞으면 5G 안테나가 몸에 심어져 정부가 추적합니다 절대 맞지 마세요" },
+    { "id": "H-MISI-03", "label": "HARMFUL", "category": "MISINFORMATION", "title": null, "content": "마늘즙만 매일 한 컵 마시면 당뇨 완치된다 병원 갈 필요 없고 약도 끊어도 된다" },
+    { "id": "H-MISI-04", "label": "HARMFUL", "category": "MISINFORMATION", "title": null, "content": "양약은 다 독이다 한방으로만 모든 병 다 고친다 의사 말 듣지 말고 약 다 버려라" },
+    { "id": "H-MISI-05", "label": "HARMFUL", "category": "MISINFORMATION", "title": null, "content": "Drinking diluted bleach actually cures COVID-19, doctors don't want you to know this secret" },
+
+    { "id": "C-GEN-01",  "label": "CLEAN",   "category": "GENERAL",        "title": null, "content": "오늘 날씨가 정말 좋네요 다들 산책 한번 다녀오시는 거 어떠세요" },
+    { "id": "C-GEN-02",  "label": "CLEAN",   "category": "GENERAL",        "title": null, "content": "한국 처음 와서 김치 처음 먹어봤는데 매워서 깜짝 놀랐어요 그래도 맛있네요" },
+    { "id": "C-GEN-03",  "label": "CLEAN",   "category": "GENERAL",        "title": null, "content": "다들 점심 뭐 드셨어요 저는 오늘 김밥이랑 떡볶이 먹었습니다" },
+    { "id": "C-GEN-04",  "label": "CLEAN",   "category": "GENERAL",        "title": null, "content": "Just moved to Seoul last week, any tips for newcomers using the subway?" },
+    { "id": "C-GEN-05",  "label": "CLEAN",   "category": "GENERAL",        "title": null, "content": "주말에 한강에서 자전거 라이딩 같이 하실 분 있을까요 초보도 환영합니다" },
+
+    { "id": "C-HOS-01",  "label": "CLEAN",   "category": "HOSPITAL_REVIEW","title": null, "content": "강남세브란스 정형외과 김민수 선생님 정말 친절하고 설명 잘해주십니다 추천드려요" },
+    { "id": "C-HOS-02",  "label": "CLEAN",   "category": "HOSPITAL_REVIEW","title": null, "content": "어제 처음 동네 이비인후과 갔는데 영어 통역 서비스가 있어서 너무 편했습니다" },
+    { "id": "C-HOS-03",  "label": "CLEAN",   "category": "HOSPITAL_REVIEW","title": null, "content": "신촌 OO피부과는 예약하기는 좀 어렵지만 치료 결과는 만족스러웠어요" },
+    { "id": "C-HOS-04",  "label": "CLEAN",   "category": "HOSPITAL_REVIEW","title": null, "content": "The doctor at International Clinic in Itaewon was very patient and spoke English well" },
+    { "id": "C-HOS-05",  "label": "CLEAN",   "category": "HOSPITAL_REVIEW","title": null, "content": "동대문 ㅇㅇ내과 진료비도 합리적이고 진료도 꼼꼼하게 봐주셔서 좋았습니다" },
+
+    { "id": "C-MED-01",  "label": "CLEAN",   "category": "MEDICAL_QUESTION","title": null, "content": "감기약 복용 후에 운전해도 괜찮나요 졸음이 올 수도 있다고 들었는데 걱정됩니다" },
+    { "id": "C-MED-02",  "label": "CLEAN",   "category": "MEDICAL_QUESTION","title": null, "content": "임신 초기인데 두통이 심할 때 타이레놀 복용해도 안전한지 궁금합니다" },
+    { "id": "C-MED-03",  "label": "CLEAN",   "category": "MEDICAL_QUESTION","title": null, "content": "혈압약과 일반 비타민제를 같이 복용해도 괜찮은지 알고 싶습니다" },
+    { "id": "C-MED-04",  "label": "CLEAN",   "category": "MEDICAL_QUESTION","title": null, "content": "Is it safe to take ibuprofen together with antihistamines? My doctor wasn't very clear" },
+    { "id": "C-MED-05",  "label": "CLEAN",   "category": "MEDICAL_QUESTION","title": null, "content": "외국인도 종합 건강검진 패키지 받을 수 있나요 추천해 주실 만한 병원이 있을까요" },
+
+    { "id": "C-TLK-01",  "label": "CLEAN",   "category": "SMALL_TALK",     "title": null, "content": "오늘 첫 출근인데 너무 떨려요 응원 한마디 부탁드려요 다들 좋은 하루 보내세요" },
+    { "id": "C-TLK-02",  "label": "CLEAN",   "category": "SMALL_TALK",     "title": null, "content": "한국어 공부 6개월 됐는데 아직도 병원 갈 때 진료 받기가 무서워요 다들 어떻게 극복하셨나요" },
+    { "id": "C-TLK-03",  "label": "CLEAN",   "category": "SMALL_TALK",     "title": null, "content": "토픽 시험 합격 후기 공유합니다 준비하시는 분들 함께 화이팅해요" },
+    { "id": "C-TLK-04",  "label": "CLEAN",   "category": "SMALL_TALK",     "title": null, "content": "Anyone want to grab lunch in Hongdae area this weekend? Looking to make new friends" },
+    { "id": "C-TLK-05",  "label": "CLEAN",   "category": "SMALL_TALK",     "title": null, "content": "오랜만에 비가 많이 와서 우산 챙기는 거 잊지 마세요 다들 감기 조심하시고요" },
+
+    { "id": "H-BORD-SUBHATE-01",  "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "외국인 환자 받느라 한국인 진료가 자꾸 밀리는 거 솔직히 좀 그래요 우리가 세금 내는데 우선순위가 있어야죠" },
+    { "id": "H-BORD-SUBHATE-02",  "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "베트남 분들은 의료 상식이 좀 부족하더라구요 카드 결제도 잘 모르고 진료 절차도 매번 다시 설명해야 해서 답답합니다" },
+    { "id": "H-BORD-SOFTSPAM-01", "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "친구가 운영하는 다이어트 한의원 너무 좋아요 카톡 ID hanbang_diet1 추가하시면 친구 할인까지 받으실 수 있어요 후기는 댓글로" },
+    { "id": "H-BORD-SOFTSPAM-02", "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "이 영양제 우리 부모님 6개월 드시니까 무릎 통증이 완전히 사라지셨어요 관심 있으신 분 댓글 남겨주시면 정가의 30% 할인해드릴게요" },
+    { "id": "H-BORD-PSEUDO-01",   "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "혈압약은 평생 먹어야 하는 게 아니에요 식습관 바꾸고 명상만 꾸준히 하면 약 다 끊을 수 있어요 저도 끊었습니다 의사 말 너무 믿지 마세요" },
+    { "id": "H-BORD-PSEUDO-02",   "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "코로나 후유증은 그냥 운동만 꾸준히 하면 다 낫습니다 굳이 후유증 클리닉 가지 마세요 의사들 진료 받아봐야 돈만 뜯깁니다" },
+    { "id": "H-BORD-EVADED-01",   "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "이 병원 시 0발 진심 다신 안 갈란다 안내 직원 태도 보면 우 ㅏ 빡쳐서 사진도 못 찍었네 별점 0점도 아까움" },
+    { "id": "H-BORD-EVADED-02",   "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "예약 시스템 만든 사람 정말 띠 ㅇ8이세요 5번 클릭해도 페이지가 안 넘어가는데 이거 만든 개발자 출근은 하나요" },
+    { "id": "H-BORD-COVERT-01",   "label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "그 의사 SNS 신상 다 까자 진료 무성의하게 보면서 돈만 챙기는 거 다 알아야지 닉네임 XXX이고 병원 주소는 OOO이니까 다들 가서 항의 댓글 좀" },
+    { "id": "H-BORD-MISLPROMO-01","label": "HARMFUL", "category": "BORDERLINE_HARMFUL", "title": null, "content": "이 한약 단돈 만원에 모든 만성 질환 완화 효과 식약처 인증도 받았어요 후기 댓글 보시고 망설이지 마세요 한정 수량" },
+
+    { "id": "C-BORD-HARSH-01",    "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "응급실 갔는데 두 시간 기다리게 하고 진료는 5분 만에 끝났어요 진짜 화나서 잠을 못 잤습니다 다시는 그 병원 안 갑니다" },
+    { "id": "C-BORD-HARSH-02",    "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "진료비 청구서 보고 어이가 없었습니다 같은 검사를 다른 병원에서는 절반 가격에 받았는데 가격 정보를 미리 안내해 주는 게 그렇게 어려운가요" },
+    { "id": "C-BORD-SIDEFX-01",   "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "신경통약 복용 후 너무 어지러워서 며칠 동안 일을 못 했습니다 비슷한 부작용 경험 있으신 분 어떻게 대처하셨는지 궁금합니다" },
+    { "id": "C-BORD-SIDEFX-02",   "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "백신 2차 접종 후 일주일 동안 팔이 안 올라갔어요 다들 부작용 어떠셨나요 이게 정상 범위인지 병원 다시 가봐야 할지 고민입니다" },
+    { "id": "C-BORD-RECCOM-01",   "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "강남 OO피부과 정말 만족스러웠어요 친구 소개로 갔는데 결과가 좋아서 저도 다른 분들께 추천드리고 싶어 글 남깁니다" },
+    { "id": "C-BORD-RECCOM-02",   "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "인사동 근처에 외국인 친화적인 한의원 한 곳 추천드려요 영어 상담 가능하시고 가격도 합리적이었습니다 도움 되셨으면 좋겠어요" },
+    { "id": "C-BORD-CONTROV-01",  "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "감기 걸렸을 때 생강차랑 꿀물 마시면 컨디션 회복에 도움이 되더라구요 약 외에도 같이 시도해볼 수 있는 방법 공유합니다 물론 증상 심하면 병원 가셔야 해요" },
+    { "id": "C-BORD-CONTROV-02",  "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "한방과 양방 같이 받는 거 어떻게들 생각하세요 저는 둘 다 받아봤는데 효과는 사람마다 다른 것 같습니다 경험 공유해주실 분 댓글 환영" },
+    { "id": "C-BORD-POLICY-01",   "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "외국인 의료보험 가입 조건이 너무 까다로워서 동료가 한참 고생하더라구요 제도 개선이 필요하다고 생각해서 의견 남깁니다" },
+    { "id": "C-BORD-EMOTION-01",  "label": "CLEAN",   "category": "BORDERLINE_CLEAN",   "title": null, "content": "오늘 진료비 청구서 받아보고 진짜 깜짝 놀랐네요 사전에 견적이라도 알 수 있는 시스템이 있었으면 좋겠다는 생각이 듭니다" }
+  ]
+}

@@ -11,3 +11,6 @@ docs/
 
 # DB 스케마 백업
 schema.sql
+
+# 정량 지수 평가 시각화 자료
+scripts
