@@ -145,15 +145,15 @@ ax_met.axvline(x=1.0, color='#bdc3c7', linewidth=1, linestyle='--', alpha=0.6)
 
 for i, (bar, val, formula) in enumerate(zip(bars, values, formulas)):
     # 수치
-    ax_met.text(min(val + 0.02, 0.98), i, f'{val:.3f}',
+    ax_met.text(min(val + 0.03, 1.05), i, f'{val:.3f}',
                 va='center', fontsize=11, fontweight='bold', color='#2c3e50')
     # 산출 식
-    ax_met.text(1.04, i, formula,
-                va='center', fontsize=7, color='#7f8c8d', linespacing=1.4)
+    ax_met.text(1.35, i, formula,
+                va='center', fontsize=8, color='#7f8c8d', linespacing=1.4)
 
 ax_met.set_yticks(range(len(names)))
 ax_met.set_yticklabels(names, fontsize=9)
-ax_met.set_xlim(0, 1.6)
+ax_met.set_xlim(0, 2.05)
 ax_met.set_xlabel('값 (0 ~ 1)', fontsize=9)
 ax_met.set_title('주요 지표 및 산출 과정', fontsize=11, fontweight='bold', color='#2c3e50')
 ax_met.spines['top'].set_visible(False)
